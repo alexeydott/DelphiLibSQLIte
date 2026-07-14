@@ -1,12 +1,5 @@
-{*******************************************************}
-{                                                       }
-{               Delphi FireDAC Framework                }
-{     FireDAC SQLite SEE static API wrapping classes    }
-{                                                       }
-{ Copyright(c) 2004-2025 Embarcadero Technologies, Inc. }
-{              All rights reserved                      }
-{                                                       }
-{*******************************************************}
+// SQLCipher static API wrapping for Delphi FireDAC Framework
+
 {$I FireDAC.inc} // $(BDS)\source\data
 {$I sqlite3.config.inc}
 {$IFDEF SQLCIPHER_CRYPTO_OPENSSL}
@@ -90,26 +83,6 @@ uses
   FireDAC.Stan.Util, FireDAC.Stan.Consts, FireDAC.Stan.Cipher,
   sqlite3.static;
 
-{$IFDEF MSWINDOWS}
-//  {$IFDEF FireDAC_32}
-//var
-//  __ieee_32_p_inf: UInt32 = $7F800000;
-//  {$ENDIF}
-  {$IFDEF FireDAC_64}
-var
-  _FInf: Double = Infinity;
-
-procedure __chkstk;
-begin
-end;
-
-function _Log(value: Double): Double;
-begin
-  Result := Ln(value);
-end;
-  {$ENDIF}
-{$ENDIF}
-
 procedure sqlite3_activate_see_compat(see: PFDAnsiString); cdecl;
 begin
   sqlite3_activate_see(see);
@@ -186,12 +159,12 @@ begin
      (Pos('malformed', LowerMessage) <> 0));
 end;
 
-function ad_sqlite3GetCacheSize(db: psqlite3): Integer; cdecl;
+function FD_sqlite3GetCacheSize(db: psqlite3): Integer; cdecl;
 begin
   Result := SQLCipherPragmaInt(db, 'pragma cache_size;', 0);
 end;
 
-function ad_sqlite3GetEncoding(db: psqlite3): Integer; cdecl;
+function FD_sqlite3GetEncoding(db: psqlite3): Integer; cdecl;
 var
   Encoding: string;
 begin
@@ -206,7 +179,7 @@ begin
     Result := SQLITE_UTF8;
 end;
 
-function ad_sqlite3GetEncryptionMode(db: psqlite3; var name: PFDAnsiString;
+function FD_sqlite3GetEncryptionMode(db: psqlite3; var name: PFDAnsiString;
   var len: Integer): Integer;
 var
   Provider: string;
@@ -237,7 +210,7 @@ begin
   Result := SQLITE_OK;
 end;
 
-function ad_sqlite3GetEncryptionError(db: psqlite3; var error: PFDAnsiString;
+function FD_sqlite3GetEncryptionError(db: psqlite3; var error: PFDAnsiString;
   var len: Integer; var error_code: Integer): Integer;
 var
   Code: Integer;
@@ -262,7 +235,7 @@ begin
   Result := SQLITE_ERROR;
 end;
 
-procedure ad_sqlite3Error(db: psqlite3; err_code: Integer; zMessage: PByte); cdecl;
+procedure FD_sqlite3Error(db: psqlite3; err_code: Integer; zMessage: PByte); cdecl;
 begin
   if db <> nil then
     sqlite3_set_errmsg(db, err_code, MarshaledAString(zMessage));
@@ -416,11 +389,11 @@ begin
   @Fsqlite3_blob_write := @sqlite3_blob_write;
   @Fsqlite3_vtab_config := @sqlite3_vtab_config;
   @Fsqlite3_vtab_on_conflict := @sqlite3_vtab_on_conflict;
-  @Fad_sqlite3GetCacheSize := @ad_sqlite3GetCacheSize;
-  @Fad_sqlite3GetEncoding := @ad_sqlite3GetEncoding;
-  @Fad_sqlite3GetEncryptionMode := @ad_sqlite3GetEncryptionMode;
-  @Fad_sqlite3GetEncryptionError := @ad_sqlite3GetEncryptionError;
-  @Fad_sqlite3Error := @ad_sqlite3Error;
+  @Fad_sqlite3GetCacheSize := @FD_sqlite3GetCacheSize;
+  @Fad_sqlite3GetEncoding := @FD_sqlite3GetEncoding;
+  @Fad_sqlite3GetEncryptionMode := @FD_sqlite3GetEncryptionMode;
+  @Fad_sqlite3GetEncryptionError := @FD_sqlite3GetEncryptionError;
+  @Fad_sqlite3Error := @FD_sqlite3Error;
 end;
 
 {-------------------------------------------------------------------------------}
