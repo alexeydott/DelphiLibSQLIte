@@ -38,18 +38,20 @@ function sqlite3_last_insert_rowid(pDB: Pointer): Int64; cdecl; external name SQ
 procedure sqlite3_set_last_insert_rowid(pDB: Pointer; iRowid: Int64); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_set_last_insert_rowid';
 function sqlite3_changes(pDB: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_changes';
 function sqlite3_total_changes(pDB: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_total_changes';
-// since 3.37.x
+// since 3.36.1
 function sqlite3_changes64(pDB: Pointer): Int64; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_changes64';
-// since 3.37.x
+// since 3.36.1
 function sqlite3_total_changes64(pDB: Pointer): Int64; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_total_changes64';
 procedure sqlite3_interrupt(pDB: Pointer); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_interrupt';
-// sinse 3.41.1
+// since 3.41.0
 function sqlite3_is_interrupted(pDB: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_is_interrupted';
 function sqlite3_complete(sql: MarshaledAString): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_complete';
 function sqlite3_complete16(sql: MarshaledString): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_complete16';
 
 function sqlite3_busy_handler(pDB: Pointer; Callback: TxBusyHandlerCallback; Ptr: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_busy_handler';
 function sqlite3_busy_timeout(pDB: Pointer; ms: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_busy_timeout';
+// since 3.50.0
+function sqlite3_setlk_timeout(pDB: Pointer; ms, flags: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_setlk_timeout';
 
 function sqlite3_get_table(db: Pointer; zSql: MarshaledAString; var pazResult: PMarshaledAString; var pnRow, pnColumn: Integer; var pzErrmsg: MarshaledAString): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_get_table';
 procedure sqlite3_free_table(result: PMarshaledAString); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_free_table';
@@ -80,7 +82,7 @@ function sqlite3_rekey_v2(pDB: Pointer; zDbName: MarshaledAString; zNewKey: Mars
 function sqlite3_activate_see(zPassPhrase: MarshaledAString): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_activate_see';
 {$ENDIF}
 function sqlite3_set_authorizer(pDB: Pointer; xAuth: TxAuth; UserData: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_set_authorizer';
-// since 3.37.x
+// since 3.37.0
 function sqlite3_autovacuum_pages(pDB: Pointer; xCallback: TxDbAutovacuumPagesCallback; UserData: Pointer; UserDataDestructor: TxDestroy): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_autovacuum_pages';
 
 {$IFDEF link_deprecated_api}
@@ -103,21 +105,24 @@ function sqlite3_uri_key(zFilename, nNumb: Integer): MarshaledAString; cdecl; ex
 
 
 function sqlite3_errcode(pDB: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_errcode';
-function sqlite3_system_errno(pDB: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_system_errno';
+function sqlite3_system_errno(pDB: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_system_errno';
 function sqlite3_errstr(iRetCode: Integer): MarshaledAString; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_errstr';
 function sqlite3_extended_errcode(pDB: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_extended_errcode';
 function sqlite3_errmsg(pDB: Pointer): MarshaledAString; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_errmsg';
 function sqlite3_errmsg16(pDB: Pointer): MarshaledString; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_errmsg16';
-// since 3.38.x
+// since 3.51.0
+function sqlite3_set_errmsg(pDB: Pointer; errCode: Integer; zErrMsg: MarshaledAString): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_set_errmsg';
+// since 3.38.0
 function sqlite3_error_offset(pDB: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_error_offset';
-// since 3.39.x
+// since 3.39.0
 function sqlite3_db_name(pDb: Pointer; dbIndex: Integer): MarshaledAString; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_db_name';
 
-// since 3.43.x
-// function sqlite3_stmt_explain(pStmt: Pointer; eMode: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_stmt_explain';
-// sinse 3.44.0
-// function sqlite3_get_clientdata(pDB: Pointer; zName: MarshaledAString): Pointer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_get_clientdata';
-// function sqlite3_set_clientdata(pDB: Pointer; zName: MarshaledAString; pData: Pointer; xDataDestructor: TxAuxDataDestructor): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_set_clientdata';
+// since 3.43.0
+function sqlite3_stmt_explain(pStmt: Pointer; eMode: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_stmt_explain';
+// since 3.44.0
+function sqlite3_get_clientdata(pDB: Pointer; zName: MarshaledAString): Pointer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_get_clientdata';
+// since 3.44.0
+function sqlite3_set_clientdata(pDB: Pointer; zName: MarshaledAString; pData: Pointer; xDataDestructor: TxAuxDataDestructor): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_set_clientdata';
 
 function sqlite3_limit(pDB: Pointer; id: Integer; newVal: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_limit';
 
@@ -129,7 +134,10 @@ function sqlite3_prepare16(pDB: Pointer; zSql: MarshaledString; nByte: Integer; 
 function sqlite3_prepare16_v2(pDB: Pointer; zSql: MarshaledString; nByte: Integer; var ppStmt: Pointer; ppzTail: PMarshaledString): Integer; overload; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_prepare16_v2';
 function sqlite3_prepare16_v3(pDB: Pointer; zSql: MarshaledString; nByte: Integer; prepFlags: Cardinal; var pStmt: Pointer; ppzTail: PMarshaledString): Integer; cdecl; external name SQLITE_METHOD_PREFIX+'sqlite3_prepare16_v3';
 
-// function sqlite3_normalized_sql(pStmt: Pointer): MarshaledAString; cdecl; external name SQLITE_METHOD_PREFIX+'sqlite3_normalized_sql';
+// since 3.26.0
+{$IFDEF SQLITE_ENABLE_NORMALIZE}
+function sqlite3_normalized_sql(pStmt: Pointer): MarshaledAString; cdecl; external name SQLITE_METHOD_PREFIX+'sqlite3_normalized_sql';
+{$ENDIF}
 function sqlite3_sql(pStmt: Pointer): MarshaledAString; cdecl; external name SQLITE_METHOD_PREFIX+'sqlite3_sql';
 function sqlite3_expanded_sql(pStmt: Pointer): MarshaledAString; overload; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_expanded_sql';
 
@@ -146,7 +154,7 @@ function sqlite3_bind_int(Statement: Pointer; Index: Integer; Value: Integer): I
 function sqlite3_bind_int64(Statement: Pointer; Index: Integer; Value: Int64): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_bind_int64';
 function sqlite3_bind_null(Statement: Pointer; Index: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_bind_null';
 function sqlite3_bind_text(Statement: Pointer; Index: Integer; Value: MarshaledAString; N: Integer; Proc: TxDestroy): Integer; overload; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_bind_text';
-function sqlite3_bind_text64(Statement: Pointer; Index: Integer; Value: MarshaledAString; N: Int64; Proc: TxDestroy): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_bind_text64';
+function sqlite3_bind_text64(Statement: Pointer; Index: Integer; Value: MarshaledAString; N: UInt64; Proc: TxDestroy; encoding: Byte): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_bind_text64';
 function sqlite3_bind_text16(Statement: Pointer; Index: Integer; Value: MarshaledString; N: Integer; Proc: TxDestroy): Integer; overload; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_bind_text16';
 
 function sqlite3_bind_value(Statement: Pointer; Index: Integer; Value: TSQLiteValue): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_bind_value';
@@ -245,7 +253,7 @@ procedure sqlite3_result_null(pCtx: PSQLite3FuncContext); cdecl; external name S
 procedure sqlite3_result_pointer(pCtx: PSQLite3FuncContext; Value: Pointer; const zType: MarshaledAString; xDestroy: TxDestroy); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_result_pointer';
 procedure sqlite3_result_subtype(pCtx: PSQLite3FuncContext; iSubtype: Cardinal); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_result_subtype';
 procedure sqlite3_result_text(pCtx: PSQLite3FuncContext; Data: MarshaledAString; Size: Integer; Proc: TxDestroy); overload; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_result_text';
-procedure sqlite3_result_text64(pCtx: PSQLite3FuncContext; Value: MarshaledAString; nBytes: UInt64; xDestroy: TxDestroy); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_result_text64';
+procedure sqlite3_result_text64(pCtx: PSQLite3FuncContext; Value: MarshaledAString; nBytes: UInt64; xDestroy: TxDestroy; encoding: Byte); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_result_text64';
 procedure sqlite3_result_text16(pCtx: PSQLite3FuncContext; Data: PChar; Size: Integer; Proc: TxDestroy); overload; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_result_text16';
 procedure sqlite3_result_text16le(pCtx: PSQLite3FuncContext; Data: PChar; Size: Integer; Proc: TxDestroy); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_result_text16le';
 procedure sqlite3_result_text16be(pCtx: PSQLite3FuncContext; Data: PChar; Size: Integer; Proc: TxDestroy); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_result_text16be';
@@ -290,7 +298,7 @@ function sqlite3_cancel_auto_extension(xEntryPoint: TxEntryPoint): Integer; cdec
 
 function sqlite3_create_module(db: Pointer; zName: MarshaledAString; Arg0: PSQLiteModule; pClientData: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_create_module';
 function sqlite3_create_module_v2(db: Pointer; zName: MarshaledAString; Arg0: PSQLiteModule; pClientData: Pointer; Proc: TxDestroy): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_create_module_v2';
-// since 3.30.x
+// since 3.30.0
 function sqlite3_drop_modules(db: Pointer; azKeep: PMarshaledAString): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_drop_modules';
 
 function sqlite3_declare_vtab(pDB: Pointer; zSql: MarshaledAString): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_declare_vtab';
@@ -298,10 +306,16 @@ function sqlite3_vtab_collation(pIndex: PSQLiteIndexInfo; iIndex: Integer): Mars
 function sqlite3_vtab_nochange(pCtxt: PSQLite3FuncContext): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_vtab_nochange';
 function sqlite3_vtab_config(pDB: Pointer; op: Integer): Integer; cdecl; varargs; external name SQLITE_METHOD_PREFIX + 'sqlite3_vtab_config';
 function sqlite3_vtab_on_conflict(pDB: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_vtab_on_conflict';
-// since 3.38.x
-// function sqlite3_vtab_distinct(pIndex: PSQLiteIndexInfo): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_vtab_distinct';
-// function sqlite3_vtab_rhs_value(pIndex: PSQLiteIndexInfo; iIndex: Integer; var ppVal: PSQLiteValue): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_vtab_rhs_value';
-// function sqlite3_vtab_in(pIndex: PSQLiteIndexInfo; iCons: Integer, bHandle: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_vtab_in';
+// since 3.38.0
+function sqlite3_vtab_distinct(pIndex: PSQLiteIndexInfo): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_vtab_distinct';
+// since 3.38.0
+function sqlite3_vtab_rhs_value(pIndex: PSQLiteIndexInfo; iIndex: Integer; var ppVal: PSQLiteValue): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_vtab_rhs_value';
+// since 3.38.0
+function sqlite3_vtab_in(pIndex: PSQLiteIndexInfo; iCons, bHandle: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_vtab_in';
+// since 3.38.0
+function sqlite3_vtab_in_first(pVal: PSQLiteValue; var ppOut: PSQLiteValue): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_vtab_in_first';
+// since 3.38.0
+function sqlite3_vtab_in_next(pVal: PSQLiteValue; var ppOut: PSQLiteValue): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_vtab_in_next';
 
 function sqlite3_blob_open(pDB: Pointer; zDb, zTable, zColumn: MarshaledAString; iRow: Int64; flags: Integer; ppBlob: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_blob_open';
 function sqlite3_blob_reopen(Blob: Pointer; Rowid: Int64): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_blob_reopen';
@@ -327,6 +341,8 @@ function sqlite3_test_control(op: Integer): Integer; cdecl; varargs; external na
 function sqlite3_status(op: Integer; var pCurrent, pHighwater: Integer; resetFlag: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_status';
 
 function sqlite3_db_status(pDB: Pointer; op: Integer; var pCur, pHiwtr: Integer; resetFlg: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_db_status';
+// since 3.51.0
+function sqlite3_db_status64(pDB: Pointer; op: Integer; var pCur, pHiwtr: Int64; resetFlg: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_db_status64';
 
 function sqlite3_backup_init(pDest: Pointer; zDestName: MarshaledAString; pSource: Pointer; zSourceName: MarshaledAString): PSQLite3Backup; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_backup_init';
 function sqlite3_backup_step(pBckp: PSQLite3Backup; nPage: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_backup_step';
@@ -339,10 +355,16 @@ function sqlite3_keyword_count(): Integer cdecl; external name SQLITE_METHOD_PRE
 function sqlite3_keyword_name(iKey: Integer; var pzName: MarshaledAString; var pnName: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_keyword_name';
 
 function sqlite3_serialize(pDB: Pointer; zSchema: MarshaledAString; piSize: PInt64; mFlags: Cardinal): Pointer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_serialize';
-function sqlite3_deserialize(pDB: Pointer; zSchema: MarshaledAString; pUserData: Pointer; iDBSize, iBufSize: Int64; iFlags: Integer): Pointer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_deserialize';
+function sqlite3_deserialize(pDB: Pointer; zSchema: MarshaledAString; pUserData: Pointer; iDBSize, iBufSize: Int64; iFlags: Cardinal): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_deserialize';
+// since 3.51.0
+function sqlite3_carray_bind(pStmt: Pointer; i: Integer; aData: Pointer; nData, mFlags: Integer; xDestroy: TxDestroy): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_carray_bind';
+// since 3.52.0
+function sqlite3_carray_bind_v2(pStmt: Pointer; i: Integer; aData: Pointer; nData, mFlags: Integer; xDestroy: TxDestroy; pDestroy: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_carray_bind_v2';
 
 function sqlite3_soft_heap_limit(iNew: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_soft_heap_limit';
 function sqlite3_status64(op: Integer; var pCurrent, pHighwater: Int64; resetFlag: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_status64';
+// since 3.31.0
+function sqlite3_hard_heap_limit64(N: Int64): Int64; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_hard_heap_limit64';
 
 procedure sqlite3_str_append(pStr: PSQLite3Str; zIn: MarshaledAString; nBytes: Integer); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_str_append';
 procedure sqlite3_str_appendall(pStr: PSQLite3Str; zIn: MarshaledAString); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_str_appendall';
@@ -350,9 +372,13 @@ procedure sqlite3_str_appendchar(pStr: PSQLite3Str; nCopies: Integer; C: AnsiCha
 procedure sqlite3_str_appendf(pStr: PSQLite3Str; zFormat: MarshaledAString);cdecl varargs;external name SQLITE_METHOD_PREFIX + 'sqlite3_str_appendf';
 function sqlite3_str_errcode(pStr: PSQLite3Str): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_str_errcode';
 function sqlite3_str_finish(pStr: PSQLite3Str): MarshaledAString; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_str_finish';
+// since 3.52.0
+procedure sqlite3_str_free(pStr: PSQLite3Str); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_str_free';
 function sqlite3_str_length(pStr: PSQLite3Str): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_str_length';
 function sqlite3_str_new(pDB: Pointer): PSQLite3Str; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_str_new';
 procedure sqlite3_str_reset(pStr: PSQLite3Str); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_str_reset';
+// since 3.52.0
+procedure sqlite3_str_truncate(pStr: PSQLite3Str; N: Integer); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_str_truncate';
 function sqlite3_str_value(pStr: PSQLite3Str): MarshaledAString; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_str_value';
 procedure sqlite3_str_vappendf(pStr: PSQLite3Str; zFormat: MarshaledAString);cdecl varargs;external name SQLITE_METHOD_PREFIX + 'sqlite3_str_vappendf';
 
@@ -479,6 +505,38 @@ uses
 //  const msvcrt = 'msvcrt.dll';
 //{$ENDIF}
 //{$ifend}
+
+{$IFDEF SQLITE3_USE_CIPHER}
+{$IFNDEF SQLITE3_CNG_CIPHER}
+{$IFDEF SQLITE3_OpenSSL3_CIPHER}
+procedure InitializeOpenSSL3Static;
+begin
+  OPENSSL_init_crypto(
+    OPENSSL_INIT_NO_ATEXIT or OPENSSL_INIT_ADD_ALL_CIPHERS or OPENSSL_INIT_ADD_ALL_DIGESTS,
+    nil);
+end;
+{$ENDIF}
+{$ENDIF}
+{$ENDIF}
+
+{$IFDEF SQLITE3_USE_CIPHER}
+{$IFDEF SQLITE3_CNG_CIPHER}
+function BCryptGenRandom(hAlgorithm: Pointer; pbBuffer: PByte; cbBuffer: Cardinal; dwFlags: Cardinal): LongInt; stdcall; external 'bcrypt.dll' name 'BCryptGenRandom';
+function BCryptOpenAlgorithmProvider(var phAlgorithm: Pointer; pszAlgId: PWideChar; pszImplementation: PWideChar; dwFlags: Cardinal): LongInt; stdcall; external 'bcrypt.dll' name 'BCryptOpenAlgorithmProvider';
+function BCryptGetProperty(hObject: Pointer; pszProperty: PWideChar; pbOutput: PByte; cbOutput: Cardinal; var pcbResult: Cardinal; dwFlags: Cardinal): LongInt; stdcall; external 'bcrypt.dll' name 'BCryptGetProperty';
+function BCryptCreateHash(hAlgorithm: Pointer; var phHash: Pointer; pbHashObject: PByte; cbHashObject: Cardinal; pbSecret: PByte; cbSecret: Cardinal; dwFlags: Cardinal): LongInt; stdcall; external 'bcrypt.dll' name 'BCryptCreateHash';
+function BCryptHashData(hHash: Pointer; pbInput: PByte; cbInput: Cardinal; dwFlags: Cardinal): LongInt; stdcall; external 'bcrypt.dll' name 'BCryptHashData';
+function BCryptFinishHash(hHash: Pointer; pbOutput: PByte; cbOutput: Cardinal; dwFlags: Cardinal): LongInt; stdcall; external 'bcrypt.dll' name 'BCryptFinishHash';
+function BCryptDestroyHash(hHash: Pointer): LongInt; stdcall; external 'bcrypt.dll' name 'BCryptDestroyHash';
+function BCryptCloseAlgorithmProvider(hAlgorithm: Pointer; dwFlags: Cardinal): LongInt; stdcall; external 'bcrypt.dll' name 'BCryptCloseAlgorithmProvider';
+function BCryptDeriveKeyPBKDF2(hPrf: Pointer; pbPassword: PByte; cbPassword: Cardinal; pbSalt: PByte; cbSalt: Cardinal; cIterations: UInt64; pbDerivedKey: PByte; cbDerivedKey: Cardinal; dwFlags: Cardinal): LongInt; stdcall; external 'bcrypt.dll' name 'BCryptDeriveKeyPBKDF2';
+function BCryptSetProperty(hObject: Pointer; pszProperty: PWideChar; pbInput: PByte; cbInput: Cardinal; dwFlags: Cardinal): LongInt; stdcall; external 'bcrypt.dll' name 'BCryptSetProperty';
+function BCryptGenerateSymmetricKey(hAlgorithm: Pointer; var phKey: Pointer; pbKeyObject: PByte; cbKeyObject: Cardinal; pbSecret: PByte; cbSecret: Cardinal; dwFlags: Cardinal): LongInt; stdcall; external 'bcrypt.dll' name 'BCryptGenerateSymmetricKey';
+function BCryptEncrypt(hKey: Pointer; pbInput: PByte; cbInput: Cardinal; pPaddingInfo: Pointer; pbIV: PByte; cbIV: Cardinal; pbOutput: PByte; cbOutput: Cardinal; var pcbResult: Cardinal; dwFlags: Cardinal): LongInt; stdcall; external 'bcrypt.dll' name 'BCryptEncrypt';
+function BCryptDecrypt(hKey: Pointer; pbInput: PByte; cbInput: Cardinal; pPaddingInfo: Pointer; pbIV: PByte; cbIV: Cardinal; pbOutput: PByte; cbOutput: Cardinal; var pcbResult: Cardinal; dwFlags: Cardinal): LongInt; stdcall; external 'bcrypt.dll' name 'BCryptDecrypt';
+function BCryptDestroyKey(hKey: Pointer): LongInt; stdcall; external 'bcrypt.dll' name 'BCryptDestroyKey';
+{$ENDIF}
+{$ENDIF}
 
 {$IFDEF WIN32}
 function _strtoll(strSource: PAnsiChar; endptr: PPAnsiChar; base: Integer): Extended; cdecl;
@@ -678,7 +736,7 @@ end;
 
 procedure OPENSSL_add_all_algorithms_noconf; cdecl;// Macro from evp.h
 begin
-  OPENSSL_init_crypto(OPENSSL_INIT_ADD_ALL_CIPHERS or OPENSSL_INIT_ADD_ALL_DIGESTS, nil);
+  OPENSSL_init_crypto(OPENSSL_INIT_NO_ATEXIT or OPENSSL_INIT_ADD_ALL_CIPHERS or OPENSSL_INIT_ADD_ALL_DIGESTS, nil);
 end;
 {$ENDIF}
 {$ENDIF}
@@ -794,7 +852,7 @@ end;
 { openssl }
 {$IFDEF SQLITE3_USE_CIPHER}
 {$IFNDEF SQLITE3_CNG_CIPHER}
-function _EVP_aes_256_cbc: EVP_CIPHER_ptr;
+function _EVP_aes_256_cbc: EVP_CIPHER_ptr; cdecl;
 begin
   result := EVP_aes_256_cbc();
 end;
@@ -813,7 +871,7 @@ end;
 
 procedure _OPENSSL_add_all_algorithms_noconf; cdecl; // Macro from evp.h
 begin
-  OPENSSL_init_crypto(OPENSSL_INIT_ADD_ALL_CIPHERS or OPENSSL_INIT_ADD_ALL_DIGESTS, nil);
+  OPENSSL_init_crypto(OPENSSL_INIT_NO_ATEXIT or OPENSSL_INIT_ADD_ALL_CIPHERS or OPENSSL_INIT_ADD_ALL_DIGESTS, nil);
 end;
 
 function _CRYPTO_malloc(Num: NativeUint; const File_: PAnsiChar; Line: Integer): Pointer; cdecl;
@@ -838,12 +896,12 @@ end;
 
 procedure _EVP_cleanup; cdecl;
 begin
-  EVP_cleanup;
+  // EVP_cleanup is a no-op in OpenSSL 1.1+; SQLCipher still references it.
 end;
 
 function _RAND_bytes(Buf: PAnsiChar; Num: Integer): Integer; cdecl;
 begin
-  result := RAND_bytes(Buf, Num);
+  result := RAND_bytes(PByte(Buf), Num);
 end;
 
 function _HMAC_Init_ex(Ctx: HMAC_CTX_ptr; const Key: Pointer; Len: Integer; const md: EVP_MD_ptr; impl: ENGINE_ptr): Integer; cdecl;
@@ -868,17 +926,17 @@ end;
 
 function _HMAC_Update(Ctx: HMAC_CTX_ptr; const Data: PAnsiChar; Len: NativeUint): Integer; cdecl;
 begin
-  result := HMAC_Update(Ctx, Data, Len);
+  result := HMAC_Update(Ctx, PByte(Data), Len);
 end;
 
 function _HMAC_Final(Ctx: HMAC_CTX_ptr; md: PAnsiChar; Len: PCardinal): Integer; cdecl;
 begin
-  result := HMAC_Final(Ctx, md, Len);
+  result := HMAC_Final(Ctx, PByte(md), Len);
 end;
 
 function _PKCS5_PBKDF2_HMAC(const pass: PAnsiChar; passlen: Integer; const Salt: PAnsiChar; SaltLen: Integer; Iter: Integer; const digest: EVP_MD_ptr; keylen: Integer; Out_: PAnsiChar): Integer; cdecl;
 begin
-  result := PKCS5_PBKDF2_HMAC(pass, passlen, Salt, SaltLen, Iter, digest, keylen, Out_);
+  result := PKCS5_PBKDF2_HMAC(pass, passlen, PByte(Salt), SaltLen, Iter, digest, keylen, PByte(Out_));
 end;
 
 function _EVP_CIPHER_CTX_new: EVP_CIPHER_CTX_ptr; cdecl;
@@ -886,14 +944,14 @@ begin
   result := EVP_CIPHER_CTX_new;
 end;
 
-function _EVP_CipherInit_ex(Ctx: EVP_CIPHER_CTX_ptr; const cipher: EVP_CIPHER_ptr; impl: ENGINE_ptr; const Key: PAnsiChar; const iv: PAnsiChar; Enc: Integer): Integer;
+function _EVP_CipherInit_ex(Ctx: EVP_CIPHER_CTX_ptr; const cipher: EVP_CIPHER_ptr; impl: ENGINE_ptr; const Key: PAnsiChar; const iv: PAnsiChar; Enc: Integer): Integer; cdecl;
 begin
-  result := EVP_CipherInit_ex(Ctx, cipher, impl, Key, iv, Enc);
+  result := EVP_CipherInit_ex(Ctx, cipher, impl, PByte(Key), PByte(iv), Enc);
 end;
 
 function _EVP_CipherUpdate(Ctx: EVP_CIPHER_CTX_ptr; Out_: Pointer; outl: PInteger; const In_: Pointer; inl: Integer): Integer; cdecl;
 begin
-  result := EVP_CipherUpdate(Ctx, Out_, outl, In_, inl);
+  result := EVP_CipherUpdate(Ctx, PByte(Out_), outl, PByte(In_), inl);
 end;
 
 function _EVP_CIPHER_CTX_set_padding(C: EVP_CIPHER_CTX_ptr; pad: Integer): Integer; cdecl;
@@ -903,7 +961,7 @@ end;
 
 function _EVP_CipherFinal_ex(Ctx: EVP_CIPHER_CTX_ptr; outm: Pointer; outl: PInteger): Integer; cdecl;
 begin
-  result := EVP_CipherFinal_ex(Ctx, outm, outl);
+  result := EVP_CipherFinal_ex(Ctx, PByte(outm), outl);
 end;
 
 procedure _EVP_CIPHER_CTX_free(C: EVP_CIPHER_CTX_ptr); cdecl;
@@ -918,7 +976,12 @@ end;
 
 function _EVP_CIPHER_nid(const cipher: EVP_CIPHER_ptr): Integer; cdecl;
 begin
-  result := EVP_CIPHER_nid(cipher);
+  result := EVP_CIPHER_get_nid(cipher);
+end;
+
+function _EVP_CIPHER_get_nid(const cipher: EVP_CIPHER_ptr): Integer; cdecl;
+begin
+  result := EVP_CIPHER_get_nid(cipher);
 end;
 
 function _EVP_CIPHER_key_length(const cipher: EVP_CIPHER_ptr): Integer; cdecl;
@@ -926,9 +989,19 @@ begin
   result := EVP_CIPHER_key_length(cipher);
 end;
 
+function _EVP_CIPHER_get_key_length(const cipher: EVP_CIPHER_ptr): Integer; cdecl;
+begin
+  result := EVP_CIPHER_get_key_length(cipher);
+end;
+
 function _EVP_CIPHER_iv_length(const cipher: EVP_CIPHER_ptr): Integer; cdecl;
 begin
   result := EVP_CIPHER_iv_length(cipher);
+end;
+
+function _EVP_CIPHER_get_iv_length(const cipher: EVP_CIPHER_ptr): Integer; cdecl;
+begin
+  result := EVP_CIPHER_get_iv_length(cipher);
 end;
 
 function _EVP_CIPHER_block_size(const cipher: EVP_CIPHER_ptr): Integer; cdecl;
@@ -936,9 +1009,54 @@ begin
   result := EVP_CIPHER_block_size(cipher);
 end;
 
+function _EVP_CIPHER_get_block_size(const cipher: EVP_CIPHER_ptr): Integer; cdecl;
+begin
+  result := EVP_CIPHER_get_block_size(cipher);
+end;
+
 function _EVP_MD_size(const md: EVP_MD_ptr): Integer; cdecl;
 begin
   result := EVP_MD_size(md);
+end;
+
+function _EVP_MD_get_size(const md: EVP_MD_ptr): Integer; cdecl;
+begin
+  result := EVP_MD_get_size(md);
+end;
+
+function _EVP_MAC_fetch(libctx: OSSL_LIB_CTX_ptr; algorithm: PAnsiChar; properties: PAnsiChar): EVP_MAC_ptr; cdecl;
+begin
+  result := EVP_MAC_fetch(libctx, algorithm, properties);
+end;
+
+function _EVP_MAC_CTX_new(mac: EVP_MAC_ptr): EVP_MAC_CTX_ptr; cdecl;
+begin
+  result := EVP_MAC_CTX_new(mac);
+end;
+
+function _EVP_MAC_init(ctx: EVP_MAC_CTX_ptr; key: PByte; keylen: NativeUInt; params: Pointer): Integer; cdecl;
+begin
+  result := EVP_MAC_init(ctx, key, keylen, params);
+end;
+
+function _EVP_MAC_update(ctx: EVP_MAC_CTX_ptr; data: PByte; datalen: NativeUInt): Integer; cdecl;
+begin
+  result := EVP_MAC_update(ctx, data, datalen);
+end;
+
+function _EVP_MAC_final(ctx: EVP_MAC_CTX_ptr; out_: PByte; outl: PNativeUInt; outsize: NativeUInt): Integer; cdecl;
+begin
+  result := EVP_MAC_final(ctx, out_, outl, outsize);
+end;
+
+procedure _EVP_MAC_CTX_free(ctx: EVP_MAC_CTX_ptr); cdecl;
+begin
+  EVP_MAC_CTX_free(ctx);
+end;
+
+procedure _EVP_MAC_free(mac: EVP_MAC_ptr); cdecl;
+begin
+  EVP_MAC_free(mac);
 end;
 
 function _ERR_get_error: Cardinal; cdecl;
@@ -988,15 +1106,15 @@ end;
 
 function _OPENSSL_sk_reserve(sk: OPENSSL_STACK_ptr; n: Integer): Integer; cdecl;
 begin
-  Result := _OPENSSL_sk_reserve(sk, n);
+  Result := OPENSSL_sk_reserve(sk, n);
 end;
 
-procedure _OPENSSL_sk_free(st: OPENSSL_STACK_ptr);
+procedure _OPENSSL_sk_free(st: OPENSSL_STACK_ptr); cdecl;
 begin
   if st <> nil then OPENSSL_sk_free(st);
 end;
 
-procedure _OPENSSL_sk_pop_free(st: OPENSSL_STACK_ptr; Func: OPENSSL_sk_pop_free_func); cdecl;
+procedure _OPENSSL_sk_pop_free(st: OPENSSL_STACK_ptr; Func: OPENSSL_sk_freefunc); cdecl;
 begin
   OPENSSL_sk_pop_free(st, Func);
 end;
@@ -1237,7 +1355,7 @@ function _fclose(stream: Pointer): Integer; cdecl; external msvcrt name 'fclose'
 function _fread(Ptr: Pointer; Size, nelem: size_t; stream: Pointer): size_t; cdecl; external msvcrt name 'fread';
 function _ftell(stream: Pointer): Longint; cdecl; external msvcrt name 'ftell';
 function _fseek(stream: Pointer; offset: Longint; mode: Integer): Integer; cdecl; external msvcrt name 'fseek';
-function _fwrite(Ptr: Pointer; Size, nelem: size_t; stream: Pointer): size_t; external msvcrt name 'fwrite';
+function _fwrite(Ptr: Pointer; Size, nelem: size_t; stream: Pointer): size_t; cdecl; external msvcrt name 'fwrite';
 function _localtime(const tod: ptime_t): ptm; cdecl; external msvcrt name 'localtime';
 function _Log(x: Double): Double; cdecl; external msvcrt name 'log';
 function _localtime_s(lpSystemTime: TSystemTime; sourceTime: time_t): Integer; cdecl; external msvcrt name '_localtime32_s';
@@ -1363,13 +1481,29 @@ end;
   {$IFDEF SQLITE3_FULL_DEBUG}
     {$L sqlite3_win64d.obj}
   {$ELSE}
-    {$L sqlite3_win64.obj}
+    {$IFDEF SQLITE3_CNG_CIPHER}
+      {$L sqlite3_win64_cng.obj}
+    {$ELSE}
+      {$IFDEF SQLITE3_OpenSSL3_CIPHER}
+        {$L sqlite3_win64_ossl.obj}
+      {$ELSE}
+        {$MESSAGE FATAL 'No SQLCipher static object profile selected for Win64'}
+      {$ENDIF}
+    {$ENDIF}
   {$ENDIF}
   {$ELSE}               // CPU32BITS / CPUX86
   {$IFDEF SQLITE3_FULL_DEBUG}
    {$L sqlite3_win32d.obj}
   {$ELSE}
-    {$L sqlite3_win32.obj}
+    {$IFDEF SQLITE3_CNG_CIPHER}
+      {$L sqlite3_win32_cng.obj}
+    {$ELSE}
+      {$IFDEF SQLITE3_OpenSSL3_CIPHER}
+        {$L sqlite3_win32_ossl.obj}
+      {$ELSE}
+        {$MESSAGE FATAL 'No SQLCipher static object profile selected for Win32'}
+      {$ENDIF}
+    {$ENDIF}
   {$ENDIF}
   {$ENDIF}
 
@@ -1980,8 +2114,13 @@ begin
   nByte := (Length(ErrorString) + 1) * SizeOf(WideChar);
   sqlite3_result_error16(pCtx,P,nByte)
 end;
-{$IFDEF WIN64} // CPU64BITS / CPUX64
-//
+initialization
+{$IFDEF SQLITE3_USE_CIPHER}
+{$IFNDEF SQLITE3_CNG_CIPHER}
+{$IFDEF SQLITE3_OpenSSL3_CIPHER}
+  InitializeOpenSSL3Static;
+{$ENDIF}
+{$ENDIF}
 {$ENDIF}
 
 end.

@@ -57,8 +57,10 @@ const
   SQLITE_PREPARE_NORMALIZE  = $02;
   /// <summary>Cause compilation to fail with SQLITE_ERROR if the statement uses any virtual tables.</summary>
   SQLITE_PREPARE_NO_VTAB    = $04;
-  /// <summary>Suppress warning/error messages from being sent to the global error log when compiling SQL; useful for “test compile” without polluting logs.</summary>
+  /// <summary>Suppress warning/error messages from being sent to the global error log when compiling SQL; useful for "test compile" without polluting logs.</summary>
   SQLITE_PREPARE_DONT_LOG   = $10;
+  /// <summary>Treat the SQL text as schema-derived DDL for trusted-schema security checks.</summary>
+  SQLITE_PREPARE_FROM_DDL   = $20; // since 3.52.0
   {$endregion}
 
   {$region ' Destructor flags'}
@@ -77,6 +79,24 @@ const
   SQLITE_DESERIALIZE_RESIZEABLE  = $02;
   /// <summary>Mount the deserialized database read-only.</summary>
   SQLITE_DESERIALIZE_READONLY    = $04;
+  {$endregion}
+
+  {$region ' setlk timeout flags'}
+  /// <summary>Request blocking on WAL connect until an exclusive-lock checkpoint completes.</summary>
+  SQLITE_SETLK_BLOCK_ON_CONNECT = $01; // since 3.50.0
+  {$endregion}
+
+  {$region ' CARRAY datatypes'}
+  /// <summary>carray() data is 32-bit signed integers.</summary>
+  SQLITE_CARRAY_INT32 = 0; // since 3.51.0
+  /// <summary>carray() data is 64-bit signed integers.</summary>
+  SQLITE_CARRAY_INT64 = 1; // since 3.51.0
+  /// <summary>carray() data is doubles.</summary>
+  SQLITE_CARRAY_DOUBLE = 2; // since 3.51.0
+  /// <summary>carray() data is char* text pointers.</summary>
+  SQLITE_CARRAY_TEXT = 3; // since 3.51.0
+  /// <summary>carray() data is struct iovec blobs.</summary>
+  SQLITE_CARRAY_BLOB = 4; // since 3.51.0
   {$endregion}
 
   {$region ' Virtual Table Configuration (sqlite3_vtab_config)'}
@@ -99,6 +119,8 @@ const
   SQLITE_CHANGESETAPPLY_IGNORENOOP  = $0004;
   /// <summary>Treat all FK constraints as NO ACTION while applying the changeset (overrides CASCADE/RESTRICT/SET NULL/SET DEFAULT).</summary>
   SQLITE_CHANGESETAPPLY_FKNOACTION  = $0008;
+  /// <summary>Abort if applying a changeset would encounter an update loop.</summary>
+  SQLITE_CHANGESETAPPLY_NOUPDATELOOP = $0010; // since 3.51.0
   {$endregion}
 
   {$region ' Result Codes'} // https://www.sqlite.org/c3ref/c_abort.html
@@ -679,7 +701,7 @@ type
   end;
   {$endregion}
 
-  {$region ' sqlite3_api_routines - for sqlite3 version: 3.51'}
+  {$region ' sqlite3_api_routines - for sqlite3 version: 3.53.3'}
   Psqlite3_api_routines = ^sqlite3_api_routines;
   /// <summary>structure that holds pointers to all of the SQLite API routines.</summary>
   sqlite3_api_routines = record
@@ -1279,7 +1301,7 @@ type
     // ----- 3.39.0+ -----
 
     /// <summary>Deserialize a database into memory for schema zSchema (experimental flags).</summary>
-    deserialize: function(db: Pointer; const zSchema: PAnsiChar; pData: PByte; szDb, szBuf, mFlags: Int64): Integer; cdecl;
+    deserialize: function(db: Pointer; const zSchema: PAnsiChar; pData: PByte; szDb, szBuf: Int64; mFlags: Cardinal): Integer; cdecl;
     /// <summary>Serialize a database to a contiguous memory buffer; returns size via pSize.</summary>
     serialize: function(db: Pointer; const zSchema: PAnsiChar; out pSize: Int64; mFlags: Cardinal): PByte; cdecl;
     /// <summary>Return name of Nth database attached to connection.</summary>
@@ -1318,6 +1340,19 @@ type
     set_errmsg: function(db: Pointer; ec: Integer; const z: PAnsiChar): Integer; cdecl;
     /// <summary>Per-connection status metrics with 64-bit counters.</summary>
     db_status64: function(db: Pointer; op: Integer; out cur, hi: Int64; resetFlag: Integer): Integer; cdecl;
+
+    // since 3.52.0
+    /// <summary>Truncate an sqlite3_str builder to N bytes or less.</summary>
+    str_truncate: procedure(s: Pointer; N: Integer); cdecl;
+    // since 3.52.0
+    /// <summary>Destroy sqlite3_str and its current string content.</summary>
+    str_free: procedure(s: Pointer); cdecl;
+    // since 3.52.0
+    /// <summary>Bind an array value to the first argument of carray().</summary>
+    carray_bind: function(st: Pointer; i: Integer; aData: Pointer; nData, mFlags: Integer; xDestroy: sqlite3_xDestroy): Integer; cdecl;
+    // since 3.52.0
+    /// <summary>Bind an array value to carray() with a separate destructor argument.</summary>
+    carray_bind_v2: function(st: Pointer; i: Integer; aData: Pointer; nData, mFlags: Integer; xDestroy: sqlite3_xDestroy; pDestroy: Pointer): Integer; cdecl;
   end;
   {$endregion}
 

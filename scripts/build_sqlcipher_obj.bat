@@ -1,7 +1,9 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 
-rem Builds sqlite3_win32.obj and/or sqlite3_win64.obj for sqlite3.static.pas.
+rem Builds suffixed SQLCipher objects for sqlite3.static.pas:
+rem   sqlite3_win32_cng.obj / sqlite3_win64_cng.obj
+rem   sqlite3_win32_ossl.obj / sqlite3_win64_ossl.obj
 rem Defaults: all platforms, SQLCIPHER_CRYPTO_CNG, dynamic bcrypt.dll loading.
 rem Usage:
 rem   scripts\build_sqlcipher_obj.bat [win32|win64|all] [cng|openssl] [dynamic|static] [--rebuild-amalgamation]
@@ -59,12 +61,14 @@ if /I "%ENGINE%"=="openssl" if not exist "%OPENSSL_ROOT%\.git" (
 
 if /I "%ENGINE%"=="openssl" (
   set "PROFILE=openssl"
+  set "OBJ_SUFFIX=ossl"
   set "PROVIDER_DEFINES=-DSQLCIPHER_CRYPTO_OPENSSL"
   set "PROVIDER_DESCRIPTION=OpenSSL 3.6.1 via DelphiLibOpenSSL"
   call :ensure_openssl_headers
   if errorlevel 1 exit /b !errorlevel!
 ) else (
   set "PROFILE=cng-%CNG_LINK%"
+  set "OBJ_SUFFIX=cng"
   set "PROVIDER_DESCRIPTION=CNG %CNG_LINK%"
   if /I "%CNG_LINK%"=="dynamic" (
     set "PROVIDER_DEFINES=-DSQLCIPHER_CRYPTO_CNG -DSQLCIPHER_CRYPTO_CNG_DYNAMIC"
@@ -74,7 +78,7 @@ if /I "%ENGINE%"=="openssl" (
 )
 
 set "SQLITE_CORE_DEFINES=-DNDEBUG -DUSEPACKAGES -D__STDC__=1 -D__MT__=1 -DSQLITE_OMIT_AUTOINIT=1 -DSQLITE_ENABLE_API_ARMOR=1 -DSQLITE_THREADSAFE=1 -DSQLITE_THREAD_OVERRIDE_LOCK=-1 -DSQLITE_HAS_CODEC=1 -DSQLITE_TEMP_STORE=2 -DSQLITE_MAX_TRIGGER_DEPTH=100"
-set "SQLITE_FEATURE_DEFINES=-DSQLITE_ENABLE_FTS3=1 -DSQLITE_ENABLE_RTREE=1 -DSQLITE_ENABLE_GEOPOLY=1 -DSQLITE_ENABLE_JSON1=1 -DSQLITE_ENABLE_STMTVTAB=1 -DSQLITE_ENABLE_DBPAGE_VTAB=1 -DSQLITE_ENABLE_DBSTAT_VTAB=1 -DSQLITE_INTROSPECTION_PRAGMAS=1 -DSQLITE_ENABLE_COLUMN_METADATA=1 -DSQLITE_ENABLE_FTS5=1 -DSQLITE_ENABLE_SESSION=1 -DSQLITE_ENABLE_PREUPDATE_HOOK=1"
+set "SQLITE_FEATURE_DEFINES=-DSQLITE_ENABLE_FTS3=1 -DSQLITE_ENABLE_RTREE=1 -DSQLITE_ENABLE_GEOPOLY=1 -DSQLITE_ENABLE_JSON1=1 -DSQLITE_ENABLE_STMTVTAB=1 -DSQLITE_ENABLE_DBPAGE_VTAB=1 -DSQLITE_ENABLE_DBSTAT_VTAB=1 -DSQLITE_INTROSPECTION_PRAGMAS=1 -DSQLITE_ENABLE_COLUMN_METADATA=1 -DSQLITE_ENABLE_FTS5=1 -DSQLITE_ENABLE_SESSION=1 -DSQLITE_ENABLE_PREUPDATE_HOOK=1 -DSQLITE_ENABLE_NORMALIZE=1"
 set "SQLITE_STATIC_EXT_DEFINES=-DSQLITE_MEMVFS_STATIC=1 -DSQLITE_SQLAR_STATIC=1 -DSQLITE_UNIONVTAB_STATIC=1 -DSQLITE_CSV_STATIC=1 -DSQLITE_VSV_STATIC=1 -DSQLITE_ZIPFILE_STATIC=1 -DSQLITE_FILEIO_STATIC=1 -DSQLITE_COMPRESS_STATIC=1 -DSQLITE_CLOSURE_STATIC=1 -DSQLITE_ENABLE_CARRAY=1 -DSQLITE_CARRAY_STATIC=1 -DSQLITE_EVAL_STATIC=1 -DSQLITE_DB_DUMP_STATIC=1 -DSQLITE_ZORDER_STATIC=1 -DSQLITE_ENABLE_UNICODE=1 -DSQLITE_ENABLE_UNICODE_STATIC=1 -DSQLITE_UUID_STATIC=1 -DSQLITE_OMIT_FILE_IO_EXTENTION=1 -DSQLITE_SOUNDEX=1 -DSQLITE_BASE64_STATIC=1 -DSQLITE_BASE85_STATIC=1"
 set "SQLCIPHER_RUNTIME_DEFINES=-DSQLCIPHER_OMIT_LOG=1 -DSQLCIPHER_OMIT_LOG_DEVICE=1 -DSQLCIPHER_OMIT_DEFAULT_LOGGING=1 -DSQLCIPHER_OMIT_DLLMAIN=1"
 set "SQLCIPHER_DEFINES=%PROVIDER_DEFINES% %SQLCIPHER_RUNTIME_DEFINES% -DSQLITE_EXTRA_INIT=sqlcipher_extra_init -DSQLITE_EXTRA_SHUTDOWN=sqlcipher_extra_shutdown"
@@ -105,7 +109,7 @@ if /I "%ARCH%"=="all" (
 )
 
 echo.
-echo DONE: copied current link objects to "%PROJECT_ROOT%\sqlite3_win32.obj" / "sqlite3_win64.obj" as applicable.
+echo DONE: copied current %OBJ_SUFFIX% link objects to "%PROJECT_ROOT%\sqlite3_win32_%OBJ_SUFFIX%.obj" / "sqlite3_win64_%OBJ_SUFFIX%.obj" as applicable.
 exit /b 0
 
 :build_win32
@@ -122,21 +126,22 @@ if errorlevel 1 exit /b !errorlevel!
 set "AMALG_DIR=%SQLCIPHER_ROOT%\build\%AMALG_ARCH%\amalgamation"
 set "SQLITE3_C=%AMALG_DIR%\sqlite3.c"
 set "OUT_DIR=%PROJECT_ROOT%\obj\sqlcipher\%PROFILE%\%PLATFORM%"
-set "OUT_OBJ=%OUT_DIR%\sqlite3_%PLATFORM%.obj"
+set "OUT_OBJ=%OUT_DIR%\sqlite3_%PLATFORM%_%OBJ_SUFFIX%.obj"
+set "FINAL_OBJ=%PROJECT_ROOT%\sqlite3_%PLATFORM%_%OBJ_SUFFIX%.obj"
 if not exist "%OUT_DIR%" mkdir "%OUT_DIR%"
-del /Q "%OUT_DIR%\*.obj" "%OUT_DIR%\*.tds" 2>NUL
+del /Q "%OUT_DIR%\*.obj" "%OUT_DIR%\*.tds" "%OUT_DIR%\*.pch" 2>NUL
 
 set "SYSINCLUDE="%RAD_STUDIO%\include";"%RAD_STUDIO%\include\dinkumware";"%RAD_STUDIO%\include\windows\crtl";"%RAD_STUDIO%\include\windows\sdk";"%RAD_STUDIO%\include\windows\rtl";"%RAD_STUDIO%\include\windows\vcl";"%RAD_STUDIO%\include\windows\fmx";"C:\Users\Public\Documents\Embarcadero\Studio\22.0\hpp\Win32""
 set "CINCLUDE="%ZLIB_INCLUDE%";"%AMALG_DIR%";"%SQLCIPHER_ROOT%\src";%SYSINCLUDE%"
 if /I "%ENGINE%"=="openssl" set "CINCLUDE="%OPENSSL_SRC%\include";%CINCLUDE%"
 
 echo Building %PLATFORM% object from "%SQLITE_LINK_SOURCE%"...
-"%BCC%" %COMMON_DEFINES% -n"%OUT_DIR%" -I%CINCLUDE% -c -tW -C8 -o"%OUT_OBJ%" -w-par -w-pia -w-rvl -O2 -v- -vi -H="%PROJECT_ROOT%\sqlcipher.pch" -H "%SQLITE_LINK_SOURCE%"
+"%BCC%" %COMMON_DEFINES% -n"%OUT_DIR%" -I%CINCLUDE% -c -tW -C8 -o"%OUT_OBJ%" -w-par -w-pia -w-rvl -O2 -v- -vi -H="%OUT_DIR%\sqlcipher.pch" -H "%SQLITE_LINK_SOURCE%"
 if errorlevel 1 exit /b !errorlevel!
 
-copy /Y "%OUT_OBJ%" "%PROJECT_ROOT%\sqlite3_%PLATFORM%.obj" >NUL
+copy /Y "%OUT_OBJ%" "%FINAL_OBJ%" >NUL
 if errorlevel 1 exit /b !errorlevel!
-echo OK: %OUT_OBJ%
+echo OK: %FINAL_OBJ%
 exit /b 0
 
 :build_win64
@@ -153,7 +158,8 @@ if errorlevel 1 exit /b !errorlevel!
 set "AMALG_DIR=%SQLCIPHER_ROOT%\build\%AMALG_ARCH%\amalgamation"
 set "SQLITE3_C=%AMALG_DIR%\sqlite3.c"
 set "OUT_DIR=%PROJECT_ROOT%\obj\sqlcipher\%PROFILE%\%PLATFORM%"
-set "OUT_OBJ=%OUT_DIR%\sqlite3_%PLATFORM%.obj"
+set "OUT_OBJ=%OUT_DIR%\sqlite3_%PLATFORM%_%OBJ_SUFFIX%.obj"
+set "FINAL_OBJ=%PROJECT_ROOT%\sqlite3_%PLATFORM%_%OBJ_SUFFIX%.obj"
 if not exist "%OUT_DIR%" mkdir "%OUT_DIR%"
 del /Q "%OUT_DIR%\*.obj" "%OUT_DIR%\*.o" "%OUT_DIR%\*.d" 2>NUL
 
@@ -162,12 +168,12 @@ set "CINCLUDE=-I"%ZLIB_INCLUDE%" -I"%AMALG_DIR%" -I"%SQLCIPHER_ROOT%\src""
 if /I "%ENGINE%"=="openssl" set "CINCLUDE=-I"%OPENSSL_SRC%\include" %CINCLUDE%"
 
 echo Building %PLATFORM% object from "%SQLITE_LINK_SOURCE%"...
-"%BCC%" -cc1 %COMMON_DEFINES% -output-dir "%OUT_DIR%" %CINCLUDE% %SYSINCLUDE% -dwarf-version=4 -fborland-extensions -nobuiltininc -nostdsysteminc -triple x86_64-pc-win32-elf -emit-obj -fexceptions -fcxx-exceptions -fseh -munwind-tables -fno-common -fno-spell-checking -fno-use-cxa-atexit -x c -std=c99 -O2 -fmath-errno -tR -o"%OUT_OBJ%" -dependency-file "%OUT_DIR%\sqlite3_%PLATFORM%.d" -MT "%OUT_OBJ%" -sys-header-deps "%SQLITE_LINK_SOURCE%"
+"%BCC%" -cc1 %COMMON_DEFINES% -output-dir "%OUT_DIR%" %CINCLUDE% %SYSINCLUDE% -dwarf-version=4 -fborland-extensions -nobuiltininc -nostdsysteminc -triple x86_64-pc-win32-elf -emit-obj -fexceptions -fcxx-exceptions -fseh -munwind-tables -fno-common -fno-spell-checking -fno-use-cxa-atexit -x c -std=c99 -O2 -fmath-errno -tR -o"%OUT_OBJ%" -dependency-file "%OUT_DIR%\sqlite3_%PLATFORM%_%OBJ_SUFFIX%.d" -MT "%OUT_OBJ%" -sys-header-deps "%SQLITE_LINK_SOURCE%"
 if errorlevel 1 exit /b !errorlevel!
 
-copy /Y "%OUT_OBJ%" "%PROJECT_ROOT%\sqlite3_%PLATFORM%.obj" >NUL
+copy /Y "%OUT_OBJ%" "%FINAL_OBJ%" >NUL
 if errorlevel 1 exit /b !errorlevel!
-echo OK: %OUT_OBJ%
+echo OK: %FINAL_OBJ%
 exit /b 0
 
 :ensure_amalgamation

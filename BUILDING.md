@@ -1,9 +1,11 @@
 # Building SQLCipher Objects
 
-This repository links SQLCipher into `sqlite3.static.pas` through platform objects:
+This repository links SQLCipher into `sqlite3.static.pas` through provider-specific platform objects:
 
-- `sqlite3_win32.obj`
-- `sqlite3_win64.obj`
+- `sqlite3_win32_cng.obj`
+- `sqlite3_win64_cng.obj`
+- `sqlite3_win32_ossl.obj`
+- `sqlite3_win64_ossl.obj`
 
 External sources are provided as submodules:
 
@@ -47,7 +49,7 @@ externals\sqlcipher\build\x64\amalgamation\sqlite3.c
 
 Use `--rebuild-amalgamation` only when the SQLCipher amalgamation must be regenerated; that delegates to the SQLCipher submodule script and requires its Tcl/Perl/MSVC toolchain.
 
-The actual C translation unit is `scripts\sqlite3_link.c`. It includes the SQLCipher amalgamation, producing one object file that matches the single `$L sqlite3_win*.obj` expectation in `sqlite3.static.pas`. The SQLCipher submodule's prepared amalgamation already includes `ext\misc\normalize.c`.
+The actual C translation unit is `scripts\sqlite3_link.c`. It includes the SQLCipher amalgamation, producing one object file per platform and provider. `sqlite3.static.pas` selects the correct `$L sqlite3_win*_cng.obj` or `$L sqlite3_win*_ossl.obj` file based on `SQLITE3_CNG_CIPHER` / `SQLITE3_OpenSSL3_CIPHER`. The SQLCipher submodule's prepared amalgamation already includes `ext\misc\normalize.c`.
 
 The translation unit also disables Embarcadero-generated TLS for SQLCipher's xoshiro state. Delphi's Win32/Win64 linkers do not accept the compiler TLS sections emitted by BCC32/BCC64 in these static objects.
 
@@ -120,6 +122,13 @@ SQLCIPHER_CRYPTO_CNG
 SQLCIPHER_CRYPTO_CNG_DYNAMIC
 ```
 
+It produces:
+
+```text
+sqlite3_win32_cng.obj
+sqlite3_win64_cng.obj
+```
+
 All build profiles also omit SQLCipher's default C-runtime logging and DLL entry point:
 
 ```text
@@ -141,6 +150,13 @@ SQLCIPHER_CRYPTO_CNG
 
 ```text
 SQLCIPHER_CRYPTO_OPENSSL
+```
+
+It produces:
+
+```text
+sqlite3_win32_ossl.obj
+sqlite3_win64_ossl.obj
 ```
 
 For Delphi linking, `sqlite3.static.pas` must see `SQLITE3_OpenSSL3_CIPHER` and must not see `SQLITE3_CNG_CIPHER`. The test runner does this through `tests\defines\openssl3\user_defines.inc`.

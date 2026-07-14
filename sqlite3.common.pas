@@ -511,9 +511,31 @@ const
   {$region 'db configuration options'}
 const
   // Configuration Options
+  SQLITE_DBCONFIG_MAINDBNAME = 1000; // const char*
   SQLITE_DBCONFIG_LOOKASIDE = 1001; // void* int int
   SQLITE_DBCONFIG_ENABLE_FKEY = 1002; // int int*
   SQLITE_DBCONFIG_ENABLE_TRIGGER = 1003; // int int*
+  SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER = 1004; // int int*
+  SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION = 1005; // int int*
+  SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE = 1006; // int int*
+  SQLITE_DBCONFIG_ENABLE_QPSG = 1007; // int int*
+  SQLITE_DBCONFIG_TRIGGER_EQP = 1008; // int int*
+  SQLITE_DBCONFIG_RESET_DATABASE = 1009; // int int*
+  SQLITE_DBCONFIG_DEFENSIVE = 1010; // int int*
+  SQLITE_DBCONFIG_WRITABLE_SCHEMA = 1011; // int int*
+  SQLITE_DBCONFIG_LEGACY_ALTER_TABLE = 1012; // int int*
+  SQLITE_DBCONFIG_DQS_DML = 1013; // int int*
+  SQLITE_DBCONFIG_DQS_DDL = 1014; // int int*
+  SQLITE_DBCONFIG_ENABLE_VIEW = 1015; // int int*
+  SQLITE_DBCONFIG_LEGACY_FILE_FORMAT = 1016; // int int*
+  SQLITE_DBCONFIG_TRUSTED_SCHEMA = 1017; // int int*
+  SQLITE_DBCONFIG_STMT_SCANSTATUS = 1018; // int int*
+  SQLITE_DBCONFIG_REVERSE_SCANORDER = 1019; // int int*
+  SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE = 1020; // int int*
+  SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE = 1021; // int int*
+  SQLITE_DBCONFIG_ENABLE_COMMENTS = 1022; // int int*
+  SQLITE_DBCONFIG_FP_DIGITS = 1023; // int int*
+  SQLITE_DBCONFIG_MAX = 1023;
   {$endregion}
 
   {$region 'Virtual Tables related'}
@@ -534,12 +556,28 @@ const
   SQLITE_INDEX_CONSTRAINT_ISNOTNULL = 70;
   SQLITE_INDEX_CONSTRAINT_ISNULL = 71;
   SQLITE_INDEX_CONSTRAINT_IS = 72;
+  // since 3.38.0
+  SQLITE_INDEX_CONSTRAINT_LIMIT = 73;
+  // since 3.38.0
+  SQLITE_INDEX_CONSTRAINT_OFFSET = 74;
+  // since 3.25.0
+  SQLITE_INDEX_CONSTRAINT_FUNCTION = 150;
 
   // Virtual Table Scan Flags
   SQLITE_INDEX_SCAN_UNIQUE = 1; // Scan visits at most 1 row
 
   // Virtual Table Safecall result
   E_SQLITE_VTAB_RES = HRESULT($8000);
+  {$endregion}
+
+  {$region 'Prepare flags'}
+const
+  SQLITE_PREPARE_PERSISTENT = $01;
+  SQLITE_PREPARE_NORMALIZE = $02;
+  SQLITE_PREPARE_NO_VTAB = $04;
+  SQLITE_PREPARE_DONT_LOG = $10;
+  // since 3.52.0
+  SQLITE_PREPARE_FROM_DDL = $20;
   {$endregion}
 
   {$region 'Limit Categories'}
@@ -1175,12 +1213,43 @@ const
   SQLITE_DBSTATUS_DEFERRED_FKS = 10;
   SQLITE_DBSTATUS_CACHE_USED_SHARED = 11;
   SQLITE_DBSTATUS_CACHE_SPILL = 12;
-  SQLITE_DBSTATUS_MAX = SQLITE_DBSTATUS_CACHE_SPILL; // LargestdefinedDBSTATUS
+  // since 3.51.0
+  SQLITE_DBSTATUS_TEMPBUF_SPILL = 13;
+  SQLITE_DBSTATUS_MAX = SQLITE_DBSTATUS_TEMPBUF_SPILL; // Largest defined DBSTATUS
 
 const
   SQLITE_STMTSTATUS_FULLSCAN_STEP = 1;
   SQLITE_STMTSTATUS_SORT = 2;
   SQLITE_STMTSTATUS_AUTOINDEX = 3;
+  SQLITE_STMTSTATUS_VM_STEP = 4;
+  SQLITE_STMTSTATUS_REPREPARE = 5;
+  SQLITE_STMTSTATUS_RUN = 6;
+  SQLITE_STMTSTATUS_FILTER_MISS = 7;
+  SQLITE_STMTSTATUS_FILTER_HIT = 8;
+  SQLITE_STMTSTATUS_MEMUSED = 99;
+
+const
+  SQLITE_SCANSTAT_NLOOP = 0;
+  SQLITE_SCANSTAT_NVISIT = 1;
+  SQLITE_SCANSTAT_EST = 2;
+  SQLITE_SCANSTAT_NAME = 3;
+  SQLITE_SCANSTAT_EXPLAIN = 4;
+  SQLITE_SCANSTAT_SELECTID = 5;
+  SQLITE_SCANSTAT_PARENTID = 6;
+  SQLITE_SCANSTAT_NCYCLE = 7;
+  SQLITE_SCANSTAT_COMPLEX = $0001;
+
+const
+  // since 3.50.0
+  SQLITE_SETLK_BLOCK_ON_CONNECT = $01;
+
+const
+  // since 3.51.0
+  SQLITE_CARRAY_INT32 = 0;
+  SQLITE_CARRAY_INT64 = 1;
+  SQLITE_CARRAY_DOUBLE = 2;
+  SQLITE_CARRAY_TEXT = 3;
+  SQLITE_CARRAY_BLOB = 4;
 
   {$region 'SQLite3 Page Cache'}
 type
@@ -1243,6 +1312,7 @@ const
   SQLITE_VTAB_CONSTRAINT_SUPPORT = 1;
   SQLITE_VTAB_INNOCUOUS = 2;
   SQLITE_VTAB_DIRECTONLY = 3;
+  SQLITE_VTAB_USES_ALL_SCHEMAS = 4;
 {$endregion 'Virtual Table Configuration Options'}
 
   {$REGION 'fts5 api'}
@@ -1646,7 +1716,7 @@ type
     procedure result_text(pCtx: PSQLite3FuncContext; Value: MarshaledAString; nBytes: Integer; xDestroy: TxDestroy); overload;
     procedure result_text_static(pCtx: PSQLite3FuncContext; Value: MarshaledAString; nBytes: Integer); overload;
     procedure result_text_transient(pCtx: PSQLite3FuncContext; Value: MarshaledAString; nBytes: Integer); overload;
-    procedure result_text64(pCtx: PSQLite3FuncContext; Value: MarshaledAString; nBytes: UInt64; xDestroy: TxDestroy);
+    procedure result_text64(pCtx: PSQLite3FuncContext; Value: MarshaledAString; nBytes: UInt64; xDestroy: TxDestroy; encoding: Integer);
     procedure result_text64_static(pCtx: PSQLite3FuncContext; Value: MarshaledAString; nBytes: Integer); overload;
     procedure result_text64_transient(pCtx: PSQLite3FuncContext; Value: MarshaledAString; nBytes: Integer); overload;
     procedure result_text(pCtx: PSQLite3FuncContext; const Value: Utf8String); overload;

@@ -157,6 +157,7 @@ procedure TestCompileOptions;
 begin
   Check(sqlite3_libversion_number > 0, 'sqlite3_libversion_number returned zero');
   Check(CompileOptionUsed('SQLITE_HAS_CODEC'), 'SQLITE_HAS_CODEC compile option is missing');
+  Check(CompileOptionUsed('SQLITE_ENABLE_NORMALIZE'), 'SQLITE_ENABLE_NORMALIZE compile option is missing');
 end;
 
 procedure TestInMemoryCrud;
