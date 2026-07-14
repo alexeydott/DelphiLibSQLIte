@@ -3,3 +3,7 @@
 obj/
 tests/bin/
 tests/dcu/
+.agents
+.codex
+.github
+*.json
