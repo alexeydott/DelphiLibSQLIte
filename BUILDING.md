@@ -34,11 +34,19 @@ scripts\build_sqlcipher_obj.bat win64 cng static
 scripts\build_sqlcipher_obj.bat win64 openssl
 ```
 
-The script uses RAD Studio from `RAD_STUDIO_ROOT`, defaulting to:
+The scripts use RAD Studio from `RAD_STUDIO_ROOT`. If it is not set, they prefer:
+
+```bat
+D:\Embarcadero RAD Studio\23.0
+```
+
+and fall back to:
 
 ```bat
 D:\Embarcadero RAD Studio\22.0
 ```
+
+Set `RAD_STUDIO_ROOT` explicitly to force either version.
 
 It consumes the prepared SQLCipher amalgamation under:
 
@@ -172,6 +180,8 @@ Build and run default tests:
 ```bat
 tests\run_sqlcipher_tests.bat
 ```
+
+The test runners use the same RAD Studio selection as the object builder: `RAD_STUDIO_ROOT`, then RAD Studio 23.0, then RAD Studio 22.0. This applies to the Delphi compiler, DUnit sources, and FireDAC sources used by the wrapper fixture.
 
 Run one platform/profile:
 

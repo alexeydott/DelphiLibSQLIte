@@ -12,7 +12,15 @@ rem   scripts\build_sqlcipher_obj.bat win64 openssl
 set "PROJECT_ROOT=%~dp0.."
 for %%I in ("%PROJECT_ROOT%") do set "PROJECT_ROOT=%%~fI"
 
-if not defined RAD_STUDIO_ROOT set "RAD_STUDIO_ROOT=D:\Embarcadero RAD Studio\22.0"
+set "RAD_STUDIO_DEFAULT=D:\Embarcadero RAD Studio\23.0"
+set "RAD_STUDIO_FALLBACK=D:\Embarcadero RAD Studio\22.0"
+if not defined RAD_STUDIO_ROOT (
+  if exist "%RAD_STUDIO_DEFAULT%\bin\bcc32.exe" if exist "%RAD_STUDIO_DEFAULT%\bin\bcc64.exe" (
+    set "RAD_STUDIO_ROOT=%RAD_STUDIO_DEFAULT%"
+  ) else (
+    set "RAD_STUDIO_ROOT=%RAD_STUDIO_FALLBACK%"
+  )
+)
 set "RAD_STUDIO=%RAD_STUDIO_ROOT%"
 set "SQLCIPHER_ROOT=%PROJECT_ROOT%\externals\sqlcipher"
 set "OPENSSL_ROOT=%PROJECT_ROOT%\externals\libopenssl"
@@ -48,6 +56,9 @@ echo Unknown argument: %~1
 goto usage
 
 :args_done
+for %%I in ("%RAD_STUDIO%") do set "RAD_STUDIO_VERSION=%%~nxI"
+if not defined RAD_STUDIO_PUBLIC_HPP set "RAD_STUDIO_PUBLIC_HPP=C:\Users\Public\Documents\Embarcadero\Studio\%RAD_STUDIO_VERSION%\hpp\Win32"
+
 if not exist "%SQLCIPHER_ROOT%\.git" (
   echo ERROR: SQLCipher submodule is missing: "%SQLCIPHER_ROOT%"
   echo Run: git submodule update --init --recursive
@@ -131,7 +142,7 @@ set "FINAL_OBJ=%PROJECT_ROOT%\sqlite3_%PLATFORM%_%OBJ_SUFFIX%.obj"
 if not exist "%OUT_DIR%" mkdir "%OUT_DIR%"
 del /Q "%OUT_DIR%\*.obj" "%OUT_DIR%\*.tds" "%OUT_DIR%\*.pch" 2>NUL
 
-set "SYSINCLUDE="%RAD_STUDIO%\include";"%RAD_STUDIO%\include\dinkumware";"%RAD_STUDIO%\include\windows\crtl";"%RAD_STUDIO%\include\windows\sdk";"%RAD_STUDIO%\include\windows\rtl";"%RAD_STUDIO%\include\windows\vcl";"%RAD_STUDIO%\include\windows\fmx";"C:\Users\Public\Documents\Embarcadero\Studio\22.0\hpp\Win32""
+set "SYSINCLUDE="%RAD_STUDIO%\include";"%RAD_STUDIO%\include\dinkumware";"%RAD_STUDIO%\include\windows\crtl";"%RAD_STUDIO%\include\windows\sdk";"%RAD_STUDIO%\include\windows\rtl";"%RAD_STUDIO%\include\windows\vcl";"%RAD_STUDIO%\include\windows\fmx";"%RAD_STUDIO_PUBLIC_HPP%""
 set "CINCLUDE="%ZLIB_INCLUDE%";"%AMALG_DIR%";"%SQLCIPHER_ROOT%\src";%SYSINCLUDE%"
 if /I "%ENGINE%"=="openssl" set "CINCLUDE="%OPENSSL_SRC%\include";%CINCLUDE%"
 

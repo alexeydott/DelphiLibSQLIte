@@ -1,10 +1,10 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 
-rem Builds the selected SQLCipher OBJ profile, compiles Sqlite3StaticTests.dpr,
-rem and runs the resulting executable.
+rem Builds the selected SQLCipher OBJ profile, compiles the FireDAC SQLCipher
+rem wrapper DUnit fixture, and runs the resulting executable.
 rem Usage:
-rem   tests\run_sqlcipher_tests.bat [win32|win64|all] [cng|openssl] [dynamic|static] [--no-build]
+rem   tests\run_firedac_wrapper_tests.bat [win32|win64|all] [cng|openssl] [dynamic|static] [--no-build]
 
 set "PROJECT_ROOT=%~dp0.."
 for %%I in ("%PROJECT_ROOT%") do set "PROJECT_ROOT=%%~fI"
@@ -12,7 +12,7 @@ for %%I in ("%PROJECT_ROOT%") do set "PROJECT_ROOT=%%~fI"
 set "RAD_STUDIO_DEFAULT=D:\Embarcadero RAD Studio\23.0"
 set "RAD_STUDIO_FALLBACK=D:\Embarcadero RAD Studio\22.0"
 if not defined RAD_STUDIO_ROOT (
-  if exist "%RAD_STUDIO_DEFAULT%\bin\dcc32.exe" if exist "%RAD_STUDIO_DEFAULT%\source\DUnit\src" (
+  if exist "%RAD_STUDIO_DEFAULT%\bin\dcc32.exe" if exist "%RAD_STUDIO_DEFAULT%\source\DUnit\src" if exist "%RAD_STUDIO_DEFAULT%\source\data\firedac\FireDAC.inc" (
     set "RAD_STUDIO_ROOT=%RAD_STUDIO_DEFAULT%"
   ) else (
     set "RAD_STUDIO_ROOT=%RAD_STUDIO_FALLBACK%"
@@ -20,6 +20,7 @@ if not defined RAD_STUDIO_ROOT (
 )
 set "RAD_STUDIO=%RAD_STUDIO_ROOT%"
 set "DUNIT_PATH=%RAD_STUDIO%\source\DUnit\src"
+set "FIREDAC_INCLUDE_PATH=%RAD_STUDIO%\source\data\firedac"
 set "ARCH=all"
 set "ENGINE=cng"
 set "CNG_LINK=dynamic"
@@ -43,12 +44,12 @@ goto usage
 :args_done
 if /I "%ENGINE%"=="openssl" (
   set "PROFILE=openssl"
-  set "DEFINE_FLAGS=-DUSER_DEFINES_INC;OPENSSL_3X;SQLITE_ENABLE_NORMALIZE"
+  set "DEFINE_FLAGS=-DUSER_DEFINES_INC;FireDAC_SQLITE_STATIC;OPENSSL_3X;SQLITE_ENABLE_NORMALIZE"
   set "INCLUDE_PATH=%PROJECT_ROOT%\tests\defines\openssl3;%PROJECT_ROOT%\tests;%PROJECT_ROOT%;%PROJECT_ROOT%\externals\libopenssl;%DUNIT_PATH%"
   set "UNIT_PATH=%PROJECT_ROOT%\tests;%PROJECT_ROOT%;%PROJECT_ROOT%\externals\libopenssl;%DUNIT_PATH%"
 ) else (
   set "PROFILE=cng-%CNG_LINK%"
-  set "DEFINE_FLAGS=-DUSER_DEFINES_INC;SQLITE_ENABLE_NORMALIZE"
+  set "DEFINE_FLAGS=-DUSER_DEFINES_INC;FireDAC_SQLITE_STATIC;SQLITE_ENABLE_NORMALIZE"
   set "INCLUDE_PATH=%PROJECT_ROOT%\tests\defines\cng;%PROJECT_ROOT%\tests;%PROJECT_ROOT%;%DUNIT_PATH%"
   set "UNIT_PATH=%PROJECT_ROOT%\tests;%PROJECT_ROOT%;%DUNIT_PATH%"
 )
@@ -79,8 +80,10 @@ exit /b 0
 set "PLATFORM=%~1"
 if /I "%PLATFORM%"=="win32" (
   set "DCC=%RAD_STUDIO%\bin\dcc32.exe"
+  set "RAD_LIB=%RAD_STUDIO%\lib\win32\release"
 ) else (
   set "DCC=%RAD_STUDIO%\bin\dcc64.exe"
+  set "RAD_LIB=%RAD_STUDIO%\lib\win64\release"
 )
 if not exist "%DCC%" (
   echo ERROR: Delphi compiler not found: "%DCC%"
@@ -88,35 +91,35 @@ if not exist "%DCC%" (
 )
 
 set "BIN_DIR=%PROJECT_ROOT%\tests\bin\%PLATFORM%\%PROFILE%"
-set "DCU_DIR=%PROJECT_ROOT%\tests\dcu\%PLATFORM%\%PROFILE%"
+set "DCU_DIR=%PROJECT_ROOT%\tests\dcu\%PLATFORM%\%PROFILE%-firedac"
 if not exist "%BIN_DIR%" mkdir "%BIN_DIR%"
 if not exist "%DCU_DIR%" mkdir "%DCU_DIR%"
 set "PLATFORM_DEFINE_FLAGS=%DEFINE_FLAGS%"
 if /I "%ENGINE%"=="openssl" if /I "%PLATFORM%"=="win64" set "PLATFORM_DEFINE_FLAGS=%DEFINE_FLAGS%;C_COMPILER_BORLAND_64"
-set "TEST_EXE=%BIN_DIR%\Sqlite3StaticTests.exe"
-set "DCC_LOG=%TEMP%\Sqlite3StaticTests_%PLATFORM%_%PROFILE%.dcc.log"
+set "TEST_EXE=%BIN_DIR%\FireDACSQLiteWrapperSQLCipherTests.exe"
+set "DCC_LOG=%TEMP%\FireDACSQLiteWrapperSQLCipherTests_%PLATFORM%_%PROFILE%.dcc.log"
 if exist "%TEST_EXE%" del /q "%TEST_EXE%" >nul 2>&1
 
 echo.
 echo =========================================================================
-echo  Compile tests: %PLATFORM% / %PROFILE%
+echo  Compile FireDAC wrapper tests: %PLATFORM% / %PROFILE%
 echo =========================================================================
-"%DCC%" -Q -B -NSSystem;System.Win;Winapi %PLATFORM_DEFINE_FLAGS% -I"%INCLUDE_PATH%" -U"%UNIT_PATH%" -E"%BIN_DIR%" -N0"%DCU_DIR%" "%PROJECT_ROOT%\tests\Sqlite3StaticTests.dpr" > "%DCC_LOG%" 2>&1
+"%DCC%" -Q -B -NSSystem;System.Win;Winapi %PLATFORM_DEFINE_FLAGS% -I"%INCLUDE_PATH%" -I"%FIREDAC_INCLUDE_PATH%" -U"%UNIT_PATH%" -U"%RAD_LIB%" -E"%BIN_DIR%" -N0"%DCU_DIR%" "%PROJECT_ROOT%\tests\FireDACSQLiteWrapperSQLCipherTests.dpr" > "%DCC_LOG%" 2>&1
 set "DCC_FAILED=0"
 if errorlevel 1 set "DCC_FAILED=1"
 type "%DCC_LOG%"
 if "%DCC_FAILED%"=="1" (
-  echo ERROR: Delphi compiler failed for %PLATFORM% / %PROFILE%.
+  echo ERROR: Delphi compiler failed for FireDAC wrapper tests %PLATFORM% / %PROFILE%.
   exit /b 1
 )
 findstr /R /C:" Error: " /C:" Fatal: " "%DCC_LOG%" >nul
 if not errorlevel 1 (
-  echo ERROR: Delphi compiler reported errors for %PLATFORM% / %PROFILE%.
+  echo ERROR: Delphi compiler reported errors for FireDAC wrapper tests %PLATFORM% / %PROFILE%.
   exit /b 1
 )
 findstr /C:" W1028 " /C:"W1028 Bad global symbol definition" "%DCC_LOG%" >nul
 if not errorlevel 1 (
-  echo ERROR: Delphi linker reported W1028 bad global symbol definitions for %PLATFORM% / %PROFILE%.
+  echo ERROR: Delphi linker reported W1028 bad global symbol definitions for FireDAC wrapper tests %PLATFORM% / %PROFILE%.
   exit /b 1
 )
 if not exist "%TEST_EXE%" (
@@ -126,7 +129,7 @@ if not exist "%TEST_EXE%" (
 
 echo.
 echo =========================================================================
-echo  Run tests: %PLATFORM% / %PROFILE%
+echo  Run FireDAC wrapper tests: %PLATFORM% / %PROFILE%
 echo =========================================================================
 "%TEST_EXE%"
 set "TEST_EXIT=%ERRORLEVEL%"
