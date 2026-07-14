@@ -1046,7 +1046,7 @@ type
 //{$endif}
   TxTrace2 = procedure(reason: Cardinal; pCtx: Pointer; P: Pointer; X: Pointer); cdecl;
   TxTrace2Callback = procedure(pCtx: Pointer; Reason: Integer; const Msg: string); cdecl;
-  TxLogFunc = function(ctx: Pointer; iCode: integer; const msg: MarshaledAString): Pointer; cdecl;
+  TxLogFunc = procedure(ctx: Pointer; iCode: Integer; const msg: MarshaledAString); cdecl;
 
   TxWalHookCallback = function(Ptr: Pointer; pDB: Pointer; DbName: MarshaledAString; NumPages: Integer): Integer; cdecl;
   TxDbDumpCallBack = procedure(const z: MarshaledAString; pContext: Pointer); cdecl;
@@ -1095,6 +1095,12 @@ type
     needToFreeIdxStr: Integer;
     orderByConsumed: Integer;
     estimatedCost: Double;
+    // since 3.8.2
+    estimatedRows: Int64;
+    // since 3.9.0
+    idxFlags: Integer;
+    // since 3.10.0
+    colUsed: UInt64;
   end;
   PSQLiteIndexInfo = ^TSQLiteIndexInfo;
 
@@ -2177,7 +2183,7 @@ begin
     until False;
 
 Quit:
-  Result := NativeUInt(dest) - NativeUInt(begd); // dest-begd return char length
+  Result := (NativeUInt(dest) - NativeUInt(begd)) div SizeOf(WideChar);
 NoSource:
   if not NoTrailingZero then
     dest^ := #0; // always append a WideChar(0) to the end of the buffer
@@ -2265,7 +2271,7 @@ begin
   begin
     SetLength(Result, 1 + len);
 
-    len := sqlite3_utf8_to_utf16(PWideChar(Result), p, nBytes);
+    len := sqlite3_utf8_to_utf16(PWideChar(Result), p, len);
 
     SetLength(Result, len);
     Exit;
@@ -2309,7 +2315,7 @@ var
   SrcBuffer: PAnsiChar;
   Value: AnsiString;
 begin
-  Value := Copy(AValue, 3, Length(AValue) - 4);
+  Value := Copy(AValue, 3, Length(AValue) - 3);
 
   Value := sqlite3_lowercase(Value);
 

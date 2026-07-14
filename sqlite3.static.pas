@@ -57,9 +57,9 @@ function sqlite3_get_table(db: Pointer; zSql: MarshaledAString; var pazResult: P
 procedure sqlite3_free_table(result: PMarshaledAString); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_free_table';
 
 function sqlite3_mprintf(Str: MarshaledAString): MarshaledAString; cdecl; varargs; external name SQLITE_METHOD_PREFIX + 'sqlite3_mprintf';
-function sqlite3_vmprintf(Str: MarshaledAString): MarshaledAString; cdecl; varargs; external name SQLITE_METHOD_PREFIX + 'sqlite3_vmprintf';
+function sqlite3_vmprintf(Str: MarshaledAString; ArgList: Pointer): MarshaledAString; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_vmprintf';
 function sqlite3_snprintf(Size: Integer; Str: MarshaledAString; Format: MarshaledAString): MarshaledAString; cdecl; varargs; external name SQLITE_METHOD_PREFIX + 'sqlite3_snprintf';
-function sqlite3_vsnprintf(Size: Integer; Str: MarshaledAString; Format: MarshaledAString): MarshaledAString; cdecl; varargs; external name SQLITE_METHOD_PREFIX + 'sqlite3_vsnprintf';
+function sqlite3_vsnprintf(Size: Integer; Str: MarshaledAString; Format: MarshaledAString; ArgList: Pointer): MarshaledAString; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_vsnprintf';
 
 function sqlite3_malloc(nBytes: Integer): Pointer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_malloc';
 function sqlite3_malloc64(nBytes: UInt64): Pointer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_malloc64';
@@ -79,7 +79,7 @@ function sqlite3_key(pDB: Pointer; Key: MarshaledAString; iKeyLen: Integer): Int
 function sqlite3_key_v2(pDB: Pointer; zDbName, zKey: MarshaledAString; iKeyLen: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_key_v2';
 function sqlite3_rekey(db: Pointer; Key: MarshaledAString; Len: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_rekey';
 function sqlite3_rekey_v2(pDB: Pointer; zDbName: MarshaledAString; zNewKey: MarshaledAString; iNewKeyLen: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_rekey_v2';
-function sqlite3_activate_see(zPassPhrase: MarshaledAString): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_activate_see';
+procedure sqlite3_activate_see(zPassPhrase: MarshaledAString); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_activate_see';
 {$ENDIF}
 function sqlite3_set_authorizer(pDB: Pointer; xAuth: TxAuth; UserData: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_set_authorizer';
 // since 3.37.0
@@ -182,7 +182,8 @@ function sqlite3_column_decltype16(Statement: Pointer; ColumnNum: Integer): Mars
 
 function sqlite3_step(Statement: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_step';
 function sqlite3_data_count(pStmt: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_data_count';
-function sqlite3_data_directory(): MarshaledAString; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_data_directory';
+// Delphi-safe accessor for the sqlite3_data_directory C global.
+function sqlite3_get_data_directory: MarshaledAString; cdecl; external name SQLITE_METHOD_PREFIX + 'delphi_sqlite3_data_directory';
 function sqlite3_db_cacheflush(pDB: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_db_cacheflush';
 function sqlite3_db_release_memory(pDB: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_db_release_memory';
 
@@ -380,7 +381,7 @@ procedure sqlite3_str_reset(pStr: PSQLite3Str); cdecl; external name SQLITE_METH
 // since 3.52.0
 procedure sqlite3_str_truncate(pStr: PSQLite3Str; N: Integer); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_str_truncate';
 function sqlite3_str_value(pStr: PSQLite3Str): MarshaledAString; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_str_value';
-procedure sqlite3_str_vappendf(pStr: PSQLite3Str; zFormat: MarshaledAString);cdecl varargs;external name SQLITE_METHOD_PREFIX + 'sqlite3_str_vappendf';
+procedure sqlite3_str_vappendf(pStr: PSQLite3Str; zFormat: MarshaledAString; ArgList: Pointer); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_str_vappendf';
 
 function sqlite3_strglob(zGlob: MarshaledAString; zStr: MarshaledAString): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_strglob';
 
@@ -1617,7 +1618,7 @@ begin
 
   if (v <> nil) and (l > 0) then
   begin
-    SetLength(result,1+l);
+    SetLength(result, l);
     Move(v^,result[1],l);
     Exit;
   end;
@@ -1658,18 +1659,21 @@ end;
 
 function sqlite3_bind_text(Statement: Pointer; Index: Integer; const AValue: UTF8String): Integer;
 var
+  allocBytes: Integer;
   nByte: Integer;
   d: Pointer;
   s: PUtf8Char absolute AValue;
 begin
   if Assigned(Statement) then
   begin
-    nByte := (Length(AValue) + 1) * SizeOf(Utf8Char);
-    if nByte > 0 then
+    nByte := Length(AValue) * SizeOf(Utf8Char);
+    allocBytes := nByte + SizeOf(Utf8Char);
+    if allocBytes > 0 then
     begin
-      d := AllocMem(nByte);
+      d := AllocMem(allocBytes);
 
-      Move(s^,d^,nByte);
+      if nByte > 0 then
+        Move(s^, d^, nByte);
 
       Result := sqlite3_bind_text(Statement,Index,d,nByte,sqlite3_destroy_mem);
       Exit;
@@ -1680,18 +1684,21 @@ end;
 
 function sqlite3_bind_text(Statement: Pointer; Index: Integer; const AValue: RawByteString): Integer;
 var
+  allocBytes: Integer;
   nByte: Integer;
   d: Pointer;
   s: PUtf8Char absolute AValue;
 begin
   if Assigned(Statement) then
   begin
-    nByte := (Length(AValue) + 1) * SizeOf(AnsiChar);
-    if nByte > 0 then
+    nByte := Length(AValue) * SizeOf(AnsiChar);
+    allocBytes := nByte + SizeOf(AnsiChar);
+    if allocBytes > 0 then
     begin
-      d := AllocMem(nByte);
+      d := AllocMem(allocBytes);
 
-      Move(s^,d^,nByte);
+      if nByte > 0 then
+        Move(s^, d^, nByte);
 
       Result := sqlite3_bind_text(Statement,Index,d,nByte,sqlite3_destroy_mem);
       Exit;
@@ -1705,7 +1712,7 @@ var
   nByte: Integer;
   p: Pointer;
 begin
-  nByte := (Length(AValue) + 1) * SizeOf(WideChar);
+  nByte := Length(AValue) * SizeOf(WideChar);
   p := TMarshal.AllocStringAsUnicode(AValue).ToPointer;
 
   Result := sqlite3_bind_text16(Statement,Index,p,nByte,sqlite3_destroy_mem);
@@ -2035,14 +2042,17 @@ end;
 
 procedure sqlite3_result_text(pCtx: PSQLite3FuncContext; const Text: Utf8String);
 var
+  allocBytes: NativeInt;
   nByte: NativeInt;
   p: Pointer;
 begin
-  nByte := (Length(Text) + 1) * SizeOf(Utf8Char);
-  if nByte > 0 then
+  nByte := Length(Text) * SizeOf(Utf8Char);
+  allocBytes := nByte + SizeOf(Utf8Char);
+  if allocBytes > 0 then
   begin
-    p := AllocMem(nByte);
-    System.Move(PUtf8Char(Text)^, p^, nByte);
+    p := AllocMem(allocBytes);
+    if nByte > 0 then
+      System.Move(PUtf8Char(Text)^, p^, nByte);
     sqlite3_result_text(pCtx, p, nByte, sqlite3_destroy_mem);
   end;
 end;
@@ -2053,20 +2063,23 @@ var
   p: Pointer;
 begin
   p := TMarshal.AllocStringAsUtf8(Text).ToPointer;
-  nByte := 1 + strlen(p);
+  nByte := strlen(p);
   sqlite3_result_text(pCtx, p, nByte, sqlite3_destroy_mem);
 end;
 
 procedure sqlite3_result_text16(pCtx: PSQLite3FuncContext; const Text: string);
 var
+  allocBytes: NativeInt;
   nByte: NativeInt;
   p: Pointer;
 begin
-  nByte := (Length(Text) + 1) * SizeOf(WideChar);
-  if nByte > 0 then
+  nByte := Length(Text) * SizeOf(WideChar);
+  allocBytes := nByte + SizeOf(WideChar);
+  if allocBytes > 0 then
   begin
-    p := AllocMem(nByte);
-    System.Move(PWideChar(Text)^, p^, nByte);
+    p := AllocMem(allocBytes);
+    if nByte > 0 then
+      System.Move(PWideChar(Text)^, p^, nByte);
     sqlite3_result_text16(pCtx, p, nByte, sqlite3_destroy_mem);
   end;
 end;

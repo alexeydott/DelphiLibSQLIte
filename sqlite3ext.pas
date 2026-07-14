@@ -1216,7 +1216,7 @@ type
     /// <summary>Return fundamental datatype code of Pointer.</summary>
     value_type: function(v: Pointer): Integer; cdecl;
     /// <summary>vprintf-like using SQLite allocator; returns heap-allocated string.</summary>
-    vmprintf: function(fmt: PAnsiChar): PAnsiChar; cdecl varargs;
+    vmprintf: function(fmt: PAnsiChar; ap: Pointer): PAnsiChar; cdecl;
     /// <summary>Ensure a global function name exists (used by vtab overloads).</summary>
     overload_function: function(db: Pointer; const zFunc: PAnsiChar; nArg: Integer): Integer; cdecl;
     /// <summary>Prepare SQL (UTF-8) with v2 behavior (better error reporting).</summary>

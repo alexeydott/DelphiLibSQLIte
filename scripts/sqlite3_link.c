@@ -12,3 +12,7 @@
 #endif
 
 #include "sqlite3.c"
+
+const char *delphi_sqlite3_data_directory(void) {
+  return sqlite3_data_directory;
+}
