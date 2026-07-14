@@ -11,6 +11,7 @@ for %%I in ("%PROJECT_ROOT%") do set "PROJECT_ROOT=%%~fI"
 
 if not defined RAD_STUDIO_ROOT set "RAD_STUDIO_ROOT=D:\Embarcadero RAD Studio\22.0"
 set "RAD_STUDIO=%RAD_STUDIO_ROOT%"
+set "DUNIT_PATH=%RAD_STUDIO%\source\DUnit\src"
 set "ARCH=all"
 set "ENGINE=cng"
 set "CNG_LINK=dynamic"
@@ -35,13 +36,13 @@ goto usage
 if /I "%ENGINE%"=="openssl" (
   set "PROFILE=openssl"
   set "DEFINE_FLAGS=-DUSER_DEFINES_INC;OPENSSL_3X;SQLITE_ENABLE_NORMALIZE"
-  set "INCLUDE_PATH=%PROJECT_ROOT%\tests\defines\openssl3;%PROJECT_ROOT%;%PROJECT_ROOT%\externals\libopenssl"
-  set "UNIT_PATH=%PROJECT_ROOT%;%PROJECT_ROOT%\externals\libopenssl"
+  set "INCLUDE_PATH=%PROJECT_ROOT%\tests\defines\openssl3;%PROJECT_ROOT%\tests;%PROJECT_ROOT%;%PROJECT_ROOT%\externals\libopenssl;%DUNIT_PATH%"
+  set "UNIT_PATH=%PROJECT_ROOT%\tests;%PROJECT_ROOT%;%PROJECT_ROOT%\externals\libopenssl;%DUNIT_PATH%"
 ) else (
   set "PROFILE=cng-%CNG_LINK%"
   set "DEFINE_FLAGS=-DUSER_DEFINES_INC;SQLITE_ENABLE_NORMALIZE"
-  set "INCLUDE_PATH=%PROJECT_ROOT%\tests\defines\cng;%PROJECT_ROOT%"
-  set "UNIT_PATH=%PROJECT_ROOT%"
+  set "INCLUDE_PATH=%PROJECT_ROOT%\tests\defines\cng;%PROJECT_ROOT%\tests;%PROJECT_ROOT%;%DUNIT_PATH%"
+  set "UNIT_PATH=%PROJECT_ROOT%\tests;%PROJECT_ROOT%;%DUNIT_PATH%"
 )
 
 if "%BUILD_FIRST%"=="1" (

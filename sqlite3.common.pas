@@ -1617,7 +1617,7 @@ type
 //    function bind_pointer(pStmt: Pointer; iParam: Integer; var Value; const zText: MarshaledAString; xDestroy: TxDestroy): Integer; overload;
 //    function bind_pointer(pStmt: Pointer; iParam: Integer; var Value; const zText: string; xDestroy: TxDestroy): Integer; overload;
     function bind_zeroblob(pStmt: Pointer; iParam, nBytes: Integer): Integer;
-    function bind_zeroblob64(pStmt: Pointer; iParam, nBytes: UInt64): Integer;
+    function bind_zeroblob64(pStmt: Pointer; iParam: Integer; nBytes: UInt64): Integer;
     function bind_parameter_count(pStmt: Pointer): Integer;
     function bind_parameter_name(pStmt: Pointer; iParam: Integer): MarshaledAString;
     function bind_parameter_name_v2(pStmt: Pointer; iParam: Integer): string;

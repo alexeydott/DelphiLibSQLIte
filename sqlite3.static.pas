@@ -15,8 +15,8 @@ function sqlite3_libversion_number: Integer; cdecl; external name SQLITE_METHOD_
 
 function sqlite3_compileoption_used(zOptName: MarshaledAString): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_compileoption_used';
 function sqlite3_compileoption_get(N: Integer): MarshaledAString; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_compileoption_get';
-function sqlite3_create_filename(const zDB,zJournal,zWal; nParam: Integer; azParam: PMarshaledAString): Pointer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_create_filename';
-procedure sqlite3_free_filename(const zFilename: Pointer); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_free_filename';
+function sqlite3_create_filename(zDB, zJournal, zWal: MarshaledAString; nParam: Integer; azParam: PMarshaledAString): MarshaledAString; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_create_filename';
+procedure sqlite3_free_filename(zFilename: MarshaledAString); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_free_filename';
 
 function sqlite3_threadsafe: Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_threadsafe';
 function sqlite3_close(pDB: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_close';
@@ -31,7 +31,7 @@ function sqlite3_os_end: Integer; cdecl; external name SQLITE_METHOD_PREFIX + 's
 
 function sqlite3_config(Option: Integer): Integer; cdecl; varargs; external name SQLITE_METHOD_PREFIX + 'sqlite3_config';
 function sqlite3_db_config(pDB: Pointer; op: Integer): Integer; cdecl; varargs; external name SQLITE_METHOD_PREFIX + 'sqlite3_db_config';
-function sqlite3_db_readonly(db: Pointer; const zDbName: PMarshaledAString): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_db_readonly';
+function sqlite3_db_readonly(db: Pointer; zDbName: MarshaledAString): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_db_readonly';
 
 function sqlite3_extended_result_codes(pDB: Pointer; onoff: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_extended_result_codes';
 function sqlite3_last_insert_rowid(pDB: Pointer): Int64; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_last_insert_rowid';
@@ -101,7 +101,7 @@ function sqlite3_open_v2(filename: MarshaledAString; var ppDb: Pointer; flags: I
 function sqlite3_uri_boolean(zFile, zParam: MarshaledAString; bDefault: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_uri_boolean';
 function sqlite3_uri_int64(zFilename, zParam: MarshaledAString; iDefault: Int64): Int64; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_uri_int64';
 function sqlite3_uri_parameter(zFilename, zParam: MarshaledAString): MarshaledAString; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_uri_parameter';
-function sqlite3_uri_key(zFilename, nNumb: Integer): MarshaledAString; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_uri_key';
+function sqlite3_uri_key(zFilename: MarshaledAString; nNumb: Integer): MarshaledAString; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_uri_key';
 
 
 function sqlite3_errcode(pDB: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_errcode';
@@ -157,10 +157,10 @@ function sqlite3_bind_text(Statement: Pointer; Index: Integer; Value: MarshaledA
 function sqlite3_bind_text64(Statement: Pointer; Index: Integer; Value: MarshaledAString; N: UInt64; Proc: TxDestroy; encoding: Byte): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_bind_text64';
 function sqlite3_bind_text16(Statement: Pointer; Index: Integer; Value: MarshaledString; N: Integer; Proc: TxDestroy): Integer; overload; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_bind_text16';
 
-function sqlite3_bind_value(Statement: Pointer; Index: Integer; Value: TSQLiteValue): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_bind_value';
+function sqlite3_bind_value(Statement: Pointer; Index: Integer; Value: PSQLiteValue): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_bind_value';
 function sqlite3_bind_pointer(Statement: Pointer; Index: Integer; var pPtr; const zText: MarshaledAString; xDestructor: TxDestroy): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_bind_pointer';
 function sqlite3_bind_zeroblob(Statement: Pointer; Index, N: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_bind_zeroblob';
-function sqlite3_bind_zeroblob64(Statement: Pointer; Index, N: UInt64): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_bind_zeroblob64';
+function sqlite3_bind_zeroblob64(Statement: Pointer; Index: Integer; N: UInt64): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_bind_zeroblob64';
 function sqlite3_bind_parameter_count(Statement: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_bind_parameter_count';
 function sqlite3_bind_parameter_name(Statement: Pointer; ParamNum: Integer): MarshaledAString; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_bind_parameter_name';
 function sqlite3_bind_parameter_index(Statement: Pointer; zName: MarshaledAString): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_bind_parameter_index';
@@ -184,7 +184,7 @@ function sqlite3_step(Statement: Pointer): Integer; cdecl; external name SQLITE_
 function sqlite3_data_count(pStmt: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_data_count';
 function sqlite3_data_directory(): MarshaledAString; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_data_directory';
 function sqlite3_db_cacheflush(pDB: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_db_cacheflush';
-function sqlite3_db_release_memory(pDB: Pointer): Pointer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_db_release_memory';
+function sqlite3_db_release_memory(pDB: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_db_release_memory';
 
 function sqlite3_column_blob(Statement: Pointer; iCol: Integer): Pointer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_column_blob';
 function sqlite3_column_bytes(Statement: Pointer; iCol: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_column_bytes';
@@ -195,7 +195,7 @@ function sqlite3_column_int64(Statement: Pointer; iCol: Integer): Int64; cdecl; 
 function sqlite3_column_text(Statement: Pointer; iCol: Integer): MarshaledAString; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_column_text';
 function sqlite3_column_text16(Statement: Pointer; iCol: Integer): PChar; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_column_text16';
 function sqlite3_column_type(Statement: Pointer; iCol: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_column_type';
-function sqlite3_column_value(Statement: Pointer; iCol: Integer): TSQLiteValue; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_column_value';
+function sqlite3_column_value(Statement: Pointer; iCol: Integer): PSQLiteValue; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_column_value';
 
 function sqlite3_finalize(pStmt: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_finalize';
 function sqlite3_reset(pStmt: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_reset';
@@ -210,7 +210,7 @@ function sqlite3_value_blob(Value: PSQLiteValue): Pointer; cdecl; external name 
 function sqlite3_value_bytes(Value: PSQLiteValue): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_value_bytes';
 function sqlite3_value_bytes16(Value: PSQLiteValue): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_value_bytes16';
 function sqlite3_value_double(Value: PSQLiteValue): Double; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_value_double';
-function sqlite3_value_dup(Orig: PSQLiteValue): TSQLiteValue; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_value_dup';
+function sqlite3_value_dup(Orig: PSQLiteValue): PSQLiteValue; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_value_dup';
 // since 3.40.0
 function sqlite3_value_encoding(Value: PSQLiteValue): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_value_encoding';
 function sqlite3_value_int(Value: PSQLiteValue): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_value_int';
@@ -257,7 +257,7 @@ procedure sqlite3_result_text64(pCtx: PSQLite3FuncContext; Value: MarshaledAStri
 procedure sqlite3_result_text16(pCtx: PSQLite3FuncContext; Data: PChar; Size: Integer; Proc: TxDestroy); overload; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_result_text16';
 procedure sqlite3_result_text16le(pCtx: PSQLite3FuncContext; Data: PChar; Size: Integer; Proc: TxDestroy); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_result_text16le';
 procedure sqlite3_result_text16be(pCtx: PSQLite3FuncContext; Data: PChar; Size: Integer; Proc: TxDestroy); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_result_text16be';
-procedure sqlite3_result_value(pCtx: PSQLite3FuncContext; Data: TSQLiteValue); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_result_value';
+procedure sqlite3_result_value(pCtx: PSQLite3FuncContext; Data: PSQLiteValue); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_result_value';
 procedure sqlite3_result_zeroblob(pCtx: PSQLite3FuncContext; N: Integer); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_result_zeroblob';
 procedure sqlite3_result_zeroblob64(pCtx: PSQLite3FuncContext; nBytes: UInt64); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_result_zeroblob64';
 
@@ -285,7 +285,7 @@ function sqlite3_release_memory(Size: Integer): Integer; cdecl; external name SQ
 
 function sqlite3_soft_heap_limit64(N: Int64): Int64; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_soft_heap_limit64';
 
-function sqlite3_table_column_metadata(db: Pointer; zDbName, zTableName, zColumnName: MarshaledUtf8String; var pzDataType, pzCollSeq: PMarshaledUtf8String; pNotNull, pPrimaryKey, pAutoinc: PInteger): Integer; cdecl;
+function sqlite3_table_column_metadata(db: Pointer; zDbName, zTableName, zColumnName: MarshaledAString; ppzDataType, ppzCollSeq: PMarshaledAString; pNotNull, pPrimaryKey, pAutoinc: PInteger): Integer; cdecl;
   external name SQLITE_METHOD_PREFIX + 'sqlite3_table_column_metadata';
 
 function sqlite3_load_extension(db: Pointer; zFile, zProc: MarshaledAString; ppzErrMsg: PMarshaledAString): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_load_extension';
@@ -361,7 +361,7 @@ function sqlite3_carray_bind(pStmt: Pointer; i: Integer; aData: Pointer; nData, 
 // since 3.52.0
 function sqlite3_carray_bind_v2(pStmt: Pointer; i: Integer; aData: Pointer; nData, mFlags: Integer; xDestroy: TxDestroy; pDestroy: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_carray_bind_v2';
 
-function sqlite3_soft_heap_limit(iNew: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_soft_heap_limit';
+procedure sqlite3_soft_heap_limit(iNew: Integer); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_soft_heap_limit';
 function sqlite3_status64(op: Integer; var pCurrent, pHighwater: Int64; resetFlag: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_status64';
 // since 3.31.0
 function sqlite3_hard_heap_limit64(N: Int64): Int64; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_hard_heap_limit64';
