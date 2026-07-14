@@ -1,0 +1,5 @@
+*.pch
+*.tds
+obj/
+tests/bin/
+tests/dcu/

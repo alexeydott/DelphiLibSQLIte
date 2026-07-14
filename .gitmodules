@@ -1,0 +1,8 @@
+[submodule "externals/sqlcipher"]
+	path = externals/sqlcipher
+	url = https://github.com/alexeydott/sqlcipher.git
+	branch = master
+[submodule "externals/libopenssl"]
+	path = externals/libopenssl
+	url = https://github.com/alexeydott/DelphiLibOpenSSL.git
+	branch = main
