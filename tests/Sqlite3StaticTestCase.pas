@@ -39,6 +39,7 @@ type
     procedure PreparedStatementsBindAndColumns;
     procedure PreparedSqlTextAndNormalize;
     procedure UserFunctionsCollationsAndValues;
+    procedure WindowAutoExtensionAndSharedCacheApis;
     procedure CollationNeededCallbacks;
     procedure HooksProgressAuthorizerAndTrace;
     procedure BlobBackupSerializeAndStatus;
@@ -96,6 +97,11 @@ type
   PDumpState = ^TDumpState;
   TDumpState = record
     Lines: Integer;
+  end;
+
+  PWindowSumState = ^TWindowSumState;
+  TWindowSumState = record
+    Sum: Int64;
   end;
 
 const
@@ -221,12 +227,97 @@ begin
   sqlite3_result_double(pCtx, 12.5);
 end;
 
+procedure StaticAnswerFunction(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PSQLiteValues); cdecl;
+begin
+  sqlite3_result_int(pCtx, 84);
+end;
+
+procedure StaticTextFunction(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PSQLiteValues); cdecl;
+begin
+  sqlite3_result_text(pCtx, UTF8String('static-text'));
+end;
+
+procedure StaticText16Function(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PSQLiteValues); cdecl;
+begin
+  sqlite3_result_text16(pCtx, 'wide-result');
+end;
+
 procedure EchoValueFunction(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PSQLiteValues); cdecl;
 begin
   if ArgNum = 1 then
     sqlite3_result_value(pCtx, ArgValues[0])
   else
     sqlite3_result_null(pCtx);
+end;
+
+procedure ValueTextProbeFunction(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PSQLiteValues); cdecl;
+var
+  ProbeOk: Boolean;
+begin
+  ProbeOk := (ArgNum = 1) and
+    (sqlite3_value_type(ArgValues[0]) = SQLITE_TEXT) and
+    (sqlite3_value_text(ArgValues[0]) <> nil) and
+    (sqlite3_value_text16(ArgValues[0]) <> nil) and
+    (sqlite3_value_text16le(ArgValues[0]) <> nil) and
+    (sqlite3_value_text16be(ArgValues[0]) <> nil) and
+    (sqlite3_value_bytes(ArgValues[0]) >= 5) and
+    (sqlite3_value_bytes16(ArgValues[0]) >= 10) and
+    (sqlite3_value_encoding(ArgValues[0]) <> 0) and
+    (sqlite3_value_subtype(ArgValues[0]) = 0) and
+    (sqlite3_value_nochange(ArgValues[0]) = 0) and
+    (sqlite3_value_str16(ArgValues[0], True) <> '');
+  sqlite3_result_int(pCtx, Ord(ProbeOk));
+end;
+
+procedure ValueBlobProbeFunction(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PSQLiteValues); cdecl;
+begin
+  if (ArgNum = 1) and (sqlite3_value_blob(ArgValues[0]) <> nil) then
+    sqlite3_result_int(pCtx, sqlite3_value_bytes(ArgValues[0]))
+  else
+    sqlite3_result_int(pCtx, -1);
+end;
+
+procedure WindowSumStep(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PSQLiteValues); cdecl;
+var
+  State: PWindowSumState;
+begin
+  State := PWindowSumState(sqlite3_aggregate_context(pCtx, SizeOf(TWindowSumState)));
+  if (State <> nil) and (ArgNum = 1) then
+    State^.Sum := State^.Sum + sqlite3_value_int64(ArgValues[0]);
+end;
+
+procedure WindowSumInverse(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PSQLiteValues); cdecl;
+var
+  State: PWindowSumState;
+begin
+  State := PWindowSumState(sqlite3_aggregate_context(pCtx, SizeOf(TWindowSumState)));
+  if (State <> nil) and (ArgNum = 1) then
+    State^.Sum := State^.Sum - sqlite3_value_int64(ArgValues[0]);
+end;
+
+procedure WindowSumValue(pCtx: PSQLite3FuncContext); cdecl;
+var
+  State: PWindowSumState;
+begin
+  State := PWindowSumState(sqlite3_aggregate_context(pCtx, 0));
+  if State = nil then
+    sqlite3_result_null(pCtx)
+  else
+    sqlite3_result_int64(pCtx, State^.Sum);
+end;
+
+function DUnitAutoExtension(db: Pointer; pzErrMsg: PMarshaledAString; pThunk: Pointer): Integer; cdecl;
+begin
+  Result := sqlite3_create_function_v2(
+    db,
+    MarshaledAString(PAnsiChar(UTF8String('dunit_auto_marker'))),
+    0,
+    SQLITE_UTF8 or SQLITE_DETERMINISTIC,
+    nil,
+    StaticAnswerFunction,
+    nil,
+    nil,
+    nil);
 end;
 
 procedure AggregateStep(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PSQLiteValues); cdecl;
@@ -341,6 +432,17 @@ procedure DumpCallback(const z: MarshaledAString; pContext: Pointer); cdecl;
 begin
   if pContext <> nil then
     Inc(PDumpState(pContext)^.Lines);
+end;
+
+function RTreeGeometryCallback(Geometry: Pointer; nCoord: Integer; var aCoord: double; var pRes: Integer): Integer; cdecl;
+begin
+  pRes := 1;
+  Result := SQLITE_OK;
+end;
+
+function RTreeQueryCallback(var info: TSQLiteRtreeQueryInfo): Integer; cdecl;
+begin
+  Result := SQLITE_OK;
 end;
 
 function CompileOptionUsed(const Name: string): Boolean;
@@ -1067,8 +1169,17 @@ begin
     CheckSqliteOk(sqlite3_create_function_v2(DB, MarshaledAString(PAnsiChar(NameUtf8)), 0, SQLITE_UTF8, nil, StaticNullFunction, nil, nil, nil), 'sqlite3_create_function_v2 static_null', DB);
     NameUtf8 := UTF8String('static_double');
     CheckSqliteOk(sqlite3_create_function_v2(DB, MarshaledAString(PAnsiChar(NameUtf8)), 0, SQLITE_UTF8, nil, StaticDoubleFunction, nil, nil, nil), 'sqlite3_create_function_v2 static_double', DB);
+    NameUtf8 := UTF8String('static_text');
+    CheckSqliteOk(sqlite3_create_function_v2(DB, MarshaledAString(PAnsiChar(NameUtf8)), 0, SQLITE_UTF8, nil, StaticTextFunction, nil, nil, nil), 'sqlite3_create_function_v2 static_text', DB);
+    NameUtf8 := UTF8String('static_text16');
+    CheckSqliteOk(sqlite3_create_function_v2(DB, MarshaledAString(PAnsiChar(NameUtf8)), 0, SQLITE_UTF8, nil, StaticText16Function, nil, nil, nil), 'sqlite3_create_function_v2 static_text16', DB);
     NameUtf8 := UTF8String('echo_value');
     CheckSqliteOk(sqlite3_create_function_v2(DB, MarshaledAString(PAnsiChar(NameUtf8)), 1, SQLITE_UTF8, nil, EchoValueFunction, nil, nil, nil), 'sqlite3_create_function_v2 echo_value', DB);
+    NameUtf8 := UTF8String('value_text_probe');
+    CheckSqliteOk(sqlite3_create_function_v2(DB, MarshaledAString(PAnsiChar(NameUtf8)), 1, SQLITE_UTF8, nil, ValueTextProbeFunction, nil, nil, nil), 'sqlite3_create_function_v2 value_text_probe', DB);
+    NameUtf8 := UTF8String('value_blob_probe');
+    CheckSqliteOk(sqlite3_create_function_v2(DB, MarshaledAString(PAnsiChar(NameUtf8)), 1, SQLITE_UTF8, nil, ValueBlobProbeFunction, nil, nil, nil), 'sqlite3_create_function_v2 value_blob_probe', DB);
+    CheckSqliteOk(sqlite3_create_function16(DB, PChar('wide_answer'), 0, SQLITE_UTF16, nil, StaticAnswerFunction, nil, nil), 'sqlite3_create_function16 wide_answer', DB);
 
     CheckEquals(42, QueryScalarInt(DB, 'select twice(21);'), 'twice literal result mismatch');
 
@@ -1098,7 +1209,12 @@ begin
     CheckEquals(5, QueryScalarInt(DB, 'select length(static_zeroblob());'), 'sqlite3_result_zeroblob64 result mismatch');
     CheckEquals(1, QueryScalarInt(DB, 'select typeof(static_null()) = ''null'';'), 'sqlite3_result_null result mismatch');
     CheckEquals(12, QueryScalarInt(DB, 'select cast(static_double() as integer);'), 'sqlite3_result_double result mismatch');
+    CheckEquals('static-text', QueryScalarText(DB, 'select static_text();'), 'sqlite3_result_text result mismatch');
+    CheckEquals('wide-result', QueryScalarText(DB, 'select static_text16();'), 'sqlite3_result_text16 result mismatch');
     CheckEquals('echoed', QueryScalarText(DB, 'select echo_value(''echoed'');'), 'sqlite3_result_value result mismatch');
+    CheckEquals(1, QueryScalarInt(DB, 'select value_text_probe(''hello'');'), 'sqlite3_value text probe mismatch');
+    CheckEquals(2, QueryScalarInt(DB, 'select value_blob_probe(x''0102'');'), 'sqlite3_value blob probe mismatch');
+    CheckEquals(84, QueryScalarInt(DB, 'select wide_answer();'), 'sqlite3_create_function16 result mismatch');
 
     ExecSql(DB, 'create table words(word text);');
     ExecSql(DB, 'insert into words(word) values(''bbbb''),(''a''),(''cc'');');
@@ -1111,6 +1227,55 @@ begin
   end;
   CheckEquals(1, FunctionState.DestroyCount, 'function destructor was not called on close');
   CheckEquals(1, CollationState.DestroyCount, 'collation destructor was not called on close');
+end;
+
+procedure TSqlite3StaticApiTests.WindowAutoExtensionAndSharedCacheApis;
+var
+  DB: Pointer;
+  NameUtf8: UTF8String;
+  SharedCacheCode: Integer;
+begin
+  DB := OpenDatabase(':memory:');
+  try
+    NameUtf8 := UTF8String('dunit_window_sum');
+    CheckSqliteOk(
+      sqlite3_create_window_function(
+        DB,
+        MarshaledAString(PAnsiChar(NameUtf8)),
+        1,
+        SQLITE_UTF8 or SQLITE_DETERMINISTIC,
+        nil,
+        WindowSumStep,
+        WindowSumValue,
+        WindowSumValue,
+        WindowSumInverse,
+        nil),
+      'sqlite3_create_window_function dunit_window_sum',
+      DB);
+    CheckEquals(
+      '1,3,5',
+      QueryScalarText(DB, 'with nums(value) as (values(1),(2),(3)) select group_concat(s, '','') from (select dunit_window_sum(value) over (order by value rows between 1 preceding and current row) as s from nums);'),
+      'window function result mismatch');
+
+    NameUtf8 := UTF8String('dunit_overload_marker');
+    CheckSqliteOk(sqlite3_overload_function(DB, MarshaledAString(PAnsiChar(NameUtf8)), 1), 'sqlite3_overload_function', DB);
+  finally
+    CloseDatabase(DB);
+  end;
+
+  sqlite3_reset_auto_extension;
+  CheckSqliteOk(sqlite3_auto_extension(DUnitAutoExtension), 'sqlite3_auto_extension');
+  DB := OpenDatabase(':memory:');
+  try
+    CheckEquals(84, QueryScalarInt(DB, 'select dunit_auto_marker();'), 'auto-extension function result mismatch');
+  finally
+    CloseDatabase(DB);
+    CheckTrue(sqlite3_cancel_auto_extension(DUnitAutoExtension) >= 0, 'sqlite3_cancel_auto_extension returned an invalid value');
+    sqlite3_reset_auto_extension;
+  end;
+
+  SharedCacheCode := sqlite3_enable_shared_cache(0);
+  CheckTrue((SharedCacheCode = SQLITE_OK) or (SharedCacheCode = SQLITE_MISUSE), 'sqlite3_enable_shared_cache returned an unexpected code');
 end;
 
 procedure TSqlite3StaticApiTests.CollationNeededCallbacks;
@@ -1516,6 +1681,8 @@ var
   Statement: Pointer;
   Values: array[0..2] of Integer;
   DumpState: TDumpState;
+  RTreeGeometryName: UTF8String;
+  RTreeQueryName: UTF8String;
 begin
   FillChar(DumpState, SizeOf(DumpState), 0);
   DB := OpenDatabase(':memory:');
@@ -1525,6 +1692,22 @@ begin
     CheckSqliteOk(sqlite3_eval_register(DB), 'sqlite3_eval_register', DB);
     CheckSqliteOk(sqlite3_base64_register(DB), 'sqlite3_base64_register', DB);
     CheckSqliteOk(sqlite3_base85_register(DB), 'sqlite3_base85_register', DB);
+    CheckSqliteOk(sqlite3_closure_register(DB), 'sqlite3_closure_register', DB);
+    CheckSqliteOk(sqlite3_csv_register(DB), 'sqlite3_csv_register', DB);
+    CheckSqliteOk(sqlite3_unionvtab_register(DB), 'sqlite3_unionvtab_register', DB);
+    CheckSqliteOk(sqlite3_zipfile_register(DB), 'sqlite3_zipfile_register', DB);
+    CheckSqliteOk(sqlite3_vsv_register(DB), 'sqlite3_vsv_register', DB);
+    RTreeGeometryName := UTF8String('dunit_geom');
+    RTreeQueryName := UTF8String('dunit_query');
+    CheckSqliteOk(sqlite3_rtree_geometry_callback(DB, MarshaledAString(PAnsiChar(RTreeGeometryName)), RTreeGeometryCallback, nil), 'sqlite3_rtree_geometry_callback', DB);
+    CheckSqliteOk(sqlite3_rtree_query_callback(DB, PByte(Pointer(PAnsiChar(RTreeQueryName))), RTreeQueryCallback, nil, nil), 'sqlite3_rtree_query_callback', DB);
+
+    CheckEquals('7', QueryScalarText(DB, 'select eval(''select 7'');'), 'eval extension result mismatch');
+    CheckEquals('eA==', QueryScalarText(DB, 'select substr(base64(cast(''x'' as blob)), 1, 4);'), 'base64 extension encode mismatch');
+    CheckEquals(1, QueryScalarInt(DB, 'select is_base85(base85(cast(''x'' as blob)));'), 'base85 extension round-trip predicate mismatch');
+    ExecSql(DB, 'create virtual table rtree_items using rtree(id, x1, x2, y1, y2);');
+    ExecSql(DB, 'insert into rtree_items values(1, 0, 10, 0, 10);');
+    CheckEquals(1, QueryScalarInt(DB, 'select count(*) from rtree_items where x1 >= 0 and x2 <= 10;'), 'rtree virtual table query mismatch');
 
     Values[0] := 3;
     Values[1] := 1;
