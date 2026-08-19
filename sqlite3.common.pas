@@ -1812,7 +1812,7 @@ type
     procedure result_text(pCtx: PSQLite3FuncContext; Value: MarshaledAString; nBytes: Integer; xDestroy: TxDestroy); overload;
     procedure result_text_static(pCtx: PSQLite3FuncContext; Value: MarshaledAString; nBytes: Integer); overload;
     procedure result_text_transient(pCtx: PSQLite3FuncContext; Value: MarshaledAString; nBytes: Integer); overload;
-    procedure result_text64(pCtx: PSQLite3FuncContext; Value: MarshaledAString; nBytes: UInt64; xDestroy: TxDestroy; encoding: Integer);
+    procedure result_text64(pCtx: PSQLite3FuncContext; Value: MarshaledAString; nBytes: UInt64; xDestroy: TxDestroy; encoding: Byte);
     procedure result_text64_static(pCtx: PSQLite3FuncContext; Value: MarshaledAString; nBytes: Integer); overload;
     procedure result_text64_transient(pCtx: PSQLite3FuncContext; Value: MarshaledAString; nBytes: Integer); overload;
     procedure result_text(pCtx: PSQLite3FuncContext; const Value: Utf8String); overload;
