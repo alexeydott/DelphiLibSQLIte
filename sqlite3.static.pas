@@ -473,6 +473,73 @@ procedure sqlite3_result_error_str(pCtx: PSQLite3FuncContext; const ErrorString:
 procedure sqlite3_result_error_str(pCtx: PSQLite3FuncContext; const ErrorString: string); overload; cdecl;
 
 
+{$IFDEF SQLITE_ENABLE_SESSION}
+{$REGION 'SQLite Session and Changeset C API'}
+function sqlite3session_create(db: Pointer; zDb: MarshaledAString; var ppSession: PSQLiteSession): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3session_create';
+procedure sqlite3session_delete(pSession: PSQLiteSession); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3session_delete';
+function sqlite3session_object_config(pSession: PSQLiteSession; op: Integer; pArg: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3session_object_config';
+function sqlite3session_enable(pSession: PSQLiteSession; bEnable: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3session_enable';
+function sqlite3session_indirect(pSession: PSQLiteSession; bIndirect: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3session_indirect';
+function sqlite3session_attach(pSession: PSQLiteSession; zTab: MarshaledAString): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3session_attach';
+procedure sqlite3session_table_filter(pSession: PSQLiteSession; xFilter: TxSessionTableFilter; pCtx: Pointer); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3session_table_filter';
+function sqlite3session_changeset(pSession: PSQLiteSession; var pnChangeset: Integer; var ppChangeset: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3session_changeset';
+function sqlite3session_changeset_size(pSession: PSQLiteSession): Int64; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3session_changeset_size';
+function sqlite3session_diff(pSession: PSQLiteSession; zFromDb, zTbl: MarshaledAString; var pzErrMsg: MarshaledAString): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3session_diff';
+function sqlite3session_patchset(pSession: PSQLiteSession; var pnPatchset: Integer; var ppPatchset: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3session_patchset';
+function sqlite3session_isempty(pSession: PSQLiteSession): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3session_isempty';
+function sqlite3session_memory_used(pSession: PSQLiteSession): Int64; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3session_memory_used';
+
+function sqlite3changeset_start(var pp: PSQLiteChangesetIter; nChangeset: Integer; pChangeset: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changeset_start';
+function sqlite3changeset_start_v2(var pp: PSQLiteChangesetIter; nChangeset: Integer; pChangeset: Pointer; flags: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changeset_start_v2';
+function sqlite3changeset_next(pIter: PSQLiteChangesetIter): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changeset_next';
+function sqlite3changeset_op(pIter: PSQLiteChangesetIter; var pzTab: MarshaledAString; var pnCol, pOp, pbIndirect: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changeset_op';
+function sqlite3changeset_pk(pIter: PSQLiteChangesetIter; var pabPK: PByte; var pnCol: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changeset_pk';
+function sqlite3changeset_old(pIter: PSQLiteChangesetIter; iVal: Integer; var ppValue: PSQLiteValue): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changeset_old';
+function sqlite3changeset_new(pIter: PSQLiteChangesetIter; iVal: Integer; var ppValue: PSQLiteValue): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changeset_new';
+function sqlite3changeset_conflict(pIter: PSQLiteChangesetIter; iVal: Integer; var ppValue: PSQLiteValue): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changeset_conflict';
+function sqlite3changeset_fk_conflicts(pIter: PSQLiteChangesetIter; var pnOut: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changeset_fk_conflicts';
+function sqlite3changeset_finalize(pIter: PSQLiteChangesetIter): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changeset_finalize';
+function sqlite3changeset_invert(nIn: Integer; pIn: Pointer; var pnOut: Integer; var ppOut: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changeset_invert';
+function sqlite3changeset_concat(nA: Integer; pA: Pointer; nB: Integer; pB: Pointer; var pnOut: Integer; var ppOut: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changeset_concat';
+function sqlite3changeset_apply(db: Pointer; nChangeset: Integer; pChangeset: Pointer; xFilter: TxSessionTableFilter; xConflict: TxSessionConflict; pCtx: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changeset_apply';
+function sqlite3changeset_apply_v2(db: Pointer; nChangeset: Integer; pChangeset: Pointer; xFilter: TxSessionTableFilter; xConflict: TxSessionConflict; pCtx: Pointer; var ppRebase: Pointer; var pnRebase: Integer; flags: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changeset_apply_v2';
+function sqlite3changeset_apply_v3(db: Pointer; nChangeset: Integer; pChangeset: Pointer; xFilter: TxSessionChangesetFilterV3; xConflict: TxSessionConflict; pCtx: Pointer; var ppRebase: Pointer; var pnRebase: Integer; flags: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changeset_apply_v3';
+
+function sqlite3changegroup_new(var pp: PSQLiteChangegroup): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changegroup_new';
+function sqlite3changegroup_schema(pGroup: PSQLiteChangegroup; db: Pointer; zDb: MarshaledAString): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changegroup_schema';
+function sqlite3changegroup_add(pGroup: PSQLiteChangegroup; nData: Integer; pData: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changegroup_add';
+function sqlite3changegroup_add_change(pGroup: PSQLiteChangegroup; nData: Integer; pData: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changegroup_add_change';
+function sqlite3changegroup_output(pGroup: PSQLiteChangegroup; var pnOut: Integer; var ppOut: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changegroup_output';
+procedure sqlite3changegroup_delete(pGroup: PSQLiteChangegroup); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changegroup_delete';
+function sqlite3changegroup_config(pGroup: PSQLiteChangegroup; op: Integer; pArg: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changegroup_config';
+function sqlite3changegroup_change_begin(pGroup: PSQLiteChangegroup; eOp: Integer; zTab: MarshaledAString; bIndirect: Integer; var pzErr: MarshaledAString): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changegroup_change_begin';
+function sqlite3changegroup_change_int64(pGroup: PSQLiteChangegroup; bNew, iCol: Integer; iVal: Int64): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changegroup_change_int64';
+function sqlite3changegroup_change_null(pGroup: PSQLiteChangegroup; bNew, iCol: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changegroup_change_null';
+function sqlite3changegroup_change_double(pGroup: PSQLiteChangegroup; bNew, iCol: Integer; rVal: Double): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changegroup_change_double';
+function sqlite3changegroup_change_text(pGroup: PSQLiteChangegroup; bNew, iCol: Integer; pVal: MarshaledAString; nVal: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changegroup_change_text';
+function sqlite3changegroup_change_blob(pGroup: PSQLiteChangegroup; bNew, iCol: Integer; pVal: Pointer; nVal: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changegroup_change_blob';
+function sqlite3changegroup_change_finish(pGroup: PSQLiteChangegroup; bDiscard: Integer; var pzErr: MarshaledAString): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changegroup_change_finish';
+
+function sqlite3rebaser_create(var ppNew: PSQLiteRebaser): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3rebaser_create';
+function sqlite3rebaser_configure(pRebaser: PSQLiteRebaser; nRebase: Integer; pRebase: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3rebaser_configure';
+function sqlite3rebaser_rebase(pRebaser: PSQLiteRebaser; nIn: Integer; pIn: Pointer; var pnOut: Integer; var ppOut: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3rebaser_rebase';
+procedure sqlite3rebaser_delete(pRebaser: PSQLiteRebaser); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3rebaser_delete';
+function sqlite3session_config(op: Integer; pArg: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3session_config';
+function sqlite3session_changeset_strm(pSession: PSQLiteSession; xOutput: TxSessionOutput; pOut: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3session_changeset_strm';
+function sqlite3session_patchset_strm(pSession: PSQLiteSession; xOutput: TxSessionOutput; pOut: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3session_patchset_strm';
+function sqlite3changeset_start_strm(var pp: PSQLiteChangesetIter; xInput: TxSessionInput; pIn: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changeset_start_strm';
+function sqlite3changeset_start_v2_strm(var pp: PSQLiteChangesetIter; xInput: TxSessionInput; pIn: Pointer; flags: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changeset_start_v2_strm';
+function sqlite3changeset_apply_strm(db: Pointer; xInput: TxSessionInput; pIn: Pointer; xFilter: TxSessionTableFilter; xConflict: TxSessionConflict; pCtx: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changeset_apply_strm';
+function sqlite3changeset_apply_v2_strm(db: Pointer; xInput: TxSessionInput; pIn: Pointer; xFilter: TxSessionTableFilter; xConflict: TxSessionConflict; pCtx: Pointer; var ppRebase: Pointer; var pnRebase: Integer; flags: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changeset_apply_v2_strm';
+function sqlite3changeset_apply_v3_strm(db: Pointer; xInput: TxSessionInput; pIn: Pointer; xFilter: TxSessionChangesetFilterV3; xConflict: TxSessionConflict; pCtx: Pointer; var ppRebase: Pointer; var pnRebase: Integer; flags: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changeset_apply_v3_strm';
+function sqlite3changeset_concat_strm(xInputA: TxSessionInput; pInA: Pointer; xInputB: TxSessionInput; pInB: Pointer; xOutput: TxSessionOutput; pOut: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changeset_concat_strm';
+function sqlite3changeset_invert_strm(xInput: TxSessionInput; pIn: Pointer; xOutput: TxSessionOutput; pOut: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changeset_invert_strm';
+function sqlite3changegroup_add_strm(pGroup: PSQLiteChangegroup; xInput: TxSessionInput; pIn: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changegroup_add_strm';
+function sqlite3changegroup_output_strm(pGroup: PSQLiteChangegroup; xOutput: TxSessionOutput; pOut: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3changegroup_output_strm';
+function sqlite3rebaser_rebase_strm(pRebaser: PSQLiteRebaser; xInput: TxSessionInput; pIn: Pointer; xOutput: TxSessionOutput; pOut: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3rebaser_rebase_strm';
+{$ENDREGION 'SQLite Session and Changeset C API'}
+{$ENDIF}
+
 function fts5_api_from_db(pDB: Pointer): PFTS5Api; cdecl;
 
 

@@ -677,6 +677,11 @@ var
   LogState: TLogState;
   MBCSText: MarshaledAString;
 begin
+  if not TFile.Exists(TestDataFileName) then
+  begin
+    Status('Skipped: test data is not available: ' + TestDataFileName);
+    Exit;
+  end;
   CheckSqliteOk(sqlite3_shutdown, 'sqlite3_shutdown before config');
   FillChar(LogState, SizeOf(LogState), 0);
   try
@@ -783,6 +788,11 @@ var
   WidePointer: PWideChar;
   WideSql: string;
 begin
+  if not TFile.Exists(TestDataFileName) then
+  begin
+    Status('Skipped: test data is not available: ' + TestDataFileName);
+    Exit;
+  end;
   DB := OpenDatabase(':memory:', SQLITE_OPEN_READWRITE or SQLITE_OPEN_CREATE);
   try
     ExecSql(DB, 'create table meta_items(id integer primary key, name text);');
@@ -1020,7 +1030,11 @@ procedure TSqlite3ExtendedApiTests.SpatialiteTestDataReadOnly;
 var
   DB: Pointer;
 begin
-  CheckTrue(TFile.Exists(TestDataFileName), 'test database is missing: ' + TestDataFileName);
+  if not TFile.Exists(TestDataFileName) then
+  begin
+    Status('Skipped: test data is not available: ' + TestDataFileName);
+    Exit;
+  end;
   DB := OpenDatabase(TestDataFileName, SQLITE_OPEN_READONLY);
   try
     LoadSpatialite(DB);

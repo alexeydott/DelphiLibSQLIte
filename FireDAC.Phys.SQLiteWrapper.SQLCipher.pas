@@ -23,7 +23,9 @@ interface
 
 {$IFDEF FireDAC_SQLITE_STATIC}
 uses
-  FireDAC.Stan.Intf, FireDAC.Phys.SQLiteCli, FireDAC.Phys.SQLiteWrapper;
+  System.SysUtils,
+  FireDAC.Stan.Intf, FireDAC.Comp.Client, FireDAC.Phys.SQLiteCli, FireDAC.Phys.SQLiteWrapper,
+  sqlite3.common, sqlite.session;
 
 const
 {$IFDEF FireDAC_SQLITE_EXTERNAL}
@@ -55,6 +57,86 @@ const
 {$ENDIF}
 
 type
+  TSQLiteLibSQLCipherStat = class;
+
+  /// <summary>Session API facade bound to an open FireDAC physical connection.</summary>
+  IFireDACSQLiteSession = interface(IUnknown)
+    ['{B5D6F3E0-5E8E-4EF6-9F3B-8C5B1C5A0C41}']
+    /// <summary>Returns the SQLite database handle owned by the FireDAC connection.</summary>
+    function GetDatabaseHandle: Pointer;
+    /// <summary>Creates a Session API capture object for this connection.</summary>
+    function CreateSession(const ASchema: string = 'main'): TSQLiteSession;
+    /// <summary>Applies a changeset to this connection.</summary>
+    function ApplyChangeset(const AChangeset: TSQLiteChangeset;
+      const AConflictAction: TSQLiteSessionConflictAction = scaAbort): Integer;
+    /// <summary>Applies a changeset with table filtering and v2 rebase output.</summary>
+    function ApplyChangesetV2(const AChangeset: TSQLiteChangeset;
+      const ATableFilter: TxSessionTableFilter; const AConflict: TxSessionConflict;
+      AContext: Pointer; AFlags: Integer; out ARebaseData: TBytes): Integer;
+    /// <summary>Applies a changeset with the v3 filter ABI and rebase output.</summary>
+    function ApplyChangesetV3(const AChangeset: TSQLiteChangeset;
+      const ATableFilter: TxSessionChangesetFilterV3; const AConflict: TxSessionConflict;
+      AContext: Pointer; AFlags: Integer; out ARebaseData: TBytes): Integer;
+    /// <summary>Applies streamed changeset data to this connection.</summary>
+    function ApplyChangesetStream(const AInput: TxSessionInput; AInputContext: Pointer;
+      const ATableFilter: TxSessionTableFilter; const AConflict: TxSessionConflict;
+      AContext: Pointer): Integer;
+    /// <summary>Applies streamed changeset data with v2 rebase output.</summary>
+    function ApplyChangesetV2Stream(const AInput: TxSessionInput; AInputContext: Pointer;
+      const ATableFilter: TxSessionTableFilter; const AConflict: TxSessionConflict;
+      AContext: Pointer; AFlags: Integer; out ARebaseData: TBytes): Integer;
+    /// <summary>Applies streamed changeset data with the v3 filter ABI.</summary>
+    function ApplyChangesetV3Stream(const AInput: TxSessionInput; AInputContext: Pointer;
+      const ATableFilter: TxSessionChangesetFilterV3; const AConflict: TxSessionConflict;
+      AContext: Pointer; AFlags: Integer; out ARebaseData: TBytes): Integer;
+    /// <summary>Creates a changegroup associated with this SQLite build.</summary>
+    function CreateChangegroup: TSQLiteChangegroup;
+    /// <summary>Creates a rebaser from apply-v2/v3 rebase data.</summary>
+    function CreateRebaser(const ARebaseData: TBytes): TSQLiteRebaser;
+    /// <summary>Configures the process-wide Session streaming buffer size.</summary>
+    function ConfigureSessionStreamSize(const AValue: Integer): Integer;
+    /// <summary>Returns the borrowed SQLite database handle.</summary>
+    property DatabaseHandle: Pointer read GetDatabaseHandle;
+  end;
+
+  /// <summary>QueryInterface-compatible adapter for the Session API of a FireDAC connection.</summary>
+  /// <remarks>The FireDAC connection must remain alive while this interface is in use.</remarks>
+  TFireDACSQLiteSession = class(TInterfacedObject, IFireDACSQLiteSession)
+  private
+    FConnection: TFDCustomConnection;
+    FDatabase: TSQLiteDatabase;
+  public
+    /// <summary>Binds the adapter to an open FireDAC connection.</summary>
+    constructor Create(const AConnection: TFDCustomConnection);
+    /// <summary>Releases the borrowed FireDAC database reference.</summary>
+    destructor Destroy; override;
+    /// <summary>Returns the borrowed SQLite database handle.</summary>
+    function GetDatabaseHandle: Pointer;
+    /// <summary>Creates a Session API capture object for the FireDAC connection.</summary>
+    function CreateSession(const ASchema: string = 'main'): TSQLiteSession;
+    /// <summary>Applies a changeset to the FireDAC connection.</summary>
+    function ApplyChangeset(const AChangeset: TSQLiteChangeset;
+      const AConflictAction: TSQLiteSessionConflictAction = scaAbort): Integer;
+    function ApplyChangesetV2(const AChangeset: TSQLiteChangeset;
+      const ATableFilter: TxSessionTableFilter; const AConflict: TxSessionConflict;
+      AContext: Pointer; AFlags: Integer; out ARebaseData: TBytes): Integer;
+    function ApplyChangesetV3(const AChangeset: TSQLiteChangeset;
+      const ATableFilter: TxSessionChangesetFilterV3; const AConflict: TxSessionConflict;
+      AContext: Pointer; AFlags: Integer; out ARebaseData: TBytes): Integer;
+    function ApplyChangesetStream(const AInput: TxSessionInput; AInputContext: Pointer;
+      const ATableFilter: TxSessionTableFilter; const AConflict: TxSessionConflict;
+      AContext: Pointer): Integer;
+    function ApplyChangesetV2Stream(const AInput: TxSessionInput; AInputContext: Pointer;
+      const ATableFilter: TxSessionTableFilter; const AConflict: TxSessionConflict;
+      AContext: Pointer; AFlags: Integer; out ARebaseData: TBytes): Integer;
+    function ApplyChangesetV3Stream(const AInput: TxSessionInput; AInputContext: Pointer;
+      const ATableFilter: TxSessionChangesetFilterV3; const AConflict: TxSessionConflict;
+      AContext: Pointer; AFlags: Integer; out ARebaseData: TBytes): Integer;
+    function CreateChangegroup: TSQLiteChangegroup;
+    function CreateRebaser(const ARebaseData: TBytes): TSQLiteRebaser;
+    function ConfigureSessionStreamSize(const AValue: Integer): Integer;
+  end;
+
   TSQLiteLibSQLCipherStat = class(TSQLiteLib)
   protected
     function GetDefaultSharedCacheMode: Integer; override;
@@ -62,6 +144,19 @@ type
   public
     procedure Load(const AVendorHome, AVendorLib: String); override;
     procedure Unload; override;
+    /// <summary>Indicates whether this statically linked SQLite build includes Session API.</summary>
+    function SupportsSessionApi: Boolean;
+    /// <summary>Creates a Session API wrapper for an open SQLite database.</summary>
+    /// <param name="ADatabase">Open SQLite database handle.</param>
+    /// <param name="ASchema">Database schema to observe, normally "main".</param>
+    function CreateSession(const ADatabase: Pointer; const ASchema: string = 'main'): TSQLiteSession;
+    /// <summary>Applies a changeset through the statically linked SQLCipher library.</summary>
+    /// <param name="ADatabase">Target SQLite database handle.</param>
+    /// <param name="AChangeset">Changeset to apply.</param>
+    /// <param name="AConflictAction">Action to use for changeset conflicts.</param>
+    /// <returns>SQLite result code returned by the apply operation.</returns>
+    function ApplyChangeset(const ADatabase: Pointer; const AChangeset: TSQLiteChangeset;
+      const AConflictAction: TSQLiteSessionConflictAction = scaAbort): Integer;
   end;
 
   // SQLite C API entry points are provided by sqlite3.static.pas.
@@ -76,7 +171,7 @@ implementation
 
 {$IFDEF FireDAC_SQLITE_STATIC}
 uses
-  System.SysUtils, System.Classes, System.SyncObjs,
+  System.Classes, System.SyncObjs,
 {$IFDEF MSWINDOWS}
   Winapi.Windows, System.Win.Crtl, System.Math,
 {$ENDIF}
@@ -95,6 +190,104 @@ var
 function SQLCipherPFDAnsiString(const Value: UTF8String): PFDAnsiString;
 begin
   Result := PFDAnsiString(PAnsiChar(Value));
+end;
+
+{ TFireDACSQLiteSession                                                        }
+{-------------------------------------------------------------------------------}
+constructor TFireDACSQLiteSession.Create(const AConnection: TFDCustomConnection);
+begin
+  inherited Create;
+  if AConnection = nil then
+    raise EArgumentNilException.Create('AConnection');
+  FConnection := AConnection;
+  FDatabase := TSQLiteDatabase(FConnection.CliObj);
+  if (FDatabase = nil) or (FDatabase.Handle = nil) then
+    raise ESQLiteSessionError.Create('FireDAC connection is not open');
+  if (FDatabase.Lib = nil) or not (FDatabase.Lib is TSQLiteLibSQLCipherStat) or
+     not Assigned(FDatabase.Lib.Fsqlite3_compileoption_used) or
+     (FDatabase.Lib.Fsqlite3_compileoption_used('ENABLE_SESSION') = 0) then
+    raise ESQLiteSessionError.Create('SQLite was built without ENABLE_SESSION');
+end;
+
+destructor TFireDACSQLiteSession.Destroy;
+begin
+  FDatabase := nil;
+  FConnection := nil;
+  inherited Destroy;
+end;
+
+function TFireDACSQLiteSession.GetDatabaseHandle: Pointer;
+begin
+  Result := FDatabase.Handle;
+end;
+
+function TFireDACSQLiteSession.CreateSession(const ASchema: string): TSQLiteSession;
+begin
+  Result := TSQLiteLibSQLCipherStat(FDatabase.Lib).CreateSession(GetDatabaseHandle, ASchema);
+end;
+
+function TFireDACSQLiteSession.ApplyChangeset(const AChangeset: TSQLiteChangeset;
+  const AConflictAction: TSQLiteSessionConflictAction): Integer;
+begin
+  Result := TSQLiteLibSQLCipherStat(FDatabase.Lib).ApplyChangeset(GetDatabaseHandle,
+    AChangeset, AConflictAction);
+end;
+
+function TFireDACSQLiteSession.ApplyChangesetV2(const AChangeset: TSQLiteChangeset;
+  const ATableFilter: TxSessionTableFilter; const AConflict: TxSessionConflict;
+  AContext: Pointer; AFlags: Integer; out ARebaseData: TBytes): Integer;
+begin
+  Result := TSQLiteSession.ApplyV2(GetDatabaseHandle, AChangeset, ATableFilter,
+    AConflict, AContext, AFlags, ARebaseData);
+end;
+
+function TFireDACSQLiteSession.ApplyChangesetV3(const AChangeset: TSQLiteChangeset;
+  const ATableFilter: TxSessionChangesetFilterV3; const AConflict: TxSessionConflict;
+  AContext: Pointer; AFlags: Integer; out ARebaseData: TBytes): Integer;
+begin
+  Result := TSQLiteSession.ApplyV3(GetDatabaseHandle, AChangeset, ATableFilter,
+    AConflict, AContext, AFlags, ARebaseData);
+end;
+
+function TFireDACSQLiteSession.ApplyChangesetStream(const AInput: TxSessionInput;
+  AInputContext: Pointer; const ATableFilter: TxSessionTableFilter;
+  const AConflict: TxSessionConflict; AContext: Pointer): Integer;
+begin
+  Result := TSQLiteSession.ApplyStream(GetDatabaseHandle, AInput, AInputContext,
+    ATableFilter, AConflict, AContext);
+end;
+
+function TFireDACSQLiteSession.ApplyChangesetV2Stream(const AInput: TxSessionInput;
+  AInputContext: Pointer; const ATableFilter: TxSessionTableFilter;
+  const AConflict: TxSessionConflict; AContext: Pointer; AFlags: Integer;
+  out ARebaseData: TBytes): Integer;
+begin
+  Result := TSQLiteSession.ApplyV2Stream(GetDatabaseHandle, AInput, AInputContext,
+    ATableFilter, AConflict, AContext, AFlags, ARebaseData);
+end;
+
+function TFireDACSQLiteSession.ApplyChangesetV3Stream(const AInput: TxSessionInput;
+  AInputContext: Pointer; const ATableFilter: TxSessionChangesetFilterV3;
+  const AConflict: TxSessionConflict; AContext: Pointer; AFlags: Integer;
+  out ARebaseData: TBytes): Integer;
+begin
+  Result := TSQLiteSession.ApplyV3Stream(GetDatabaseHandle, AInput, AInputContext,
+    ATableFilter, AConflict, AContext, AFlags, ARebaseData);
+end;
+
+function TFireDACSQLiteSession.CreateChangegroup: TSQLiteChangegroup;
+begin
+  Result := TSQLiteChangegroup.Create;
+end;
+
+function TFireDACSQLiteSession.CreateRebaser(const ARebaseData: TBytes): TSQLiteRebaser;
+begin
+  Result := TSQLiteRebaser.Create(ARebaseData);
+end;
+
+function TFireDACSQLiteSession.ConfigureSessionStreamSize(const AValue: Integer): Integer;
+begin
+  Result := TSQLiteSession.ConfigureStreamSize(AValue);
 end;
 
 function SQLCipherPragmaText(db: psqlite3; const SQL: UTF8String): string;
@@ -261,6 +454,28 @@ end;
 procedure TSQLiteLibSQLCipherStat.Unload;
 begin
   InternalBeforeUnload;
+end;
+
+function TSQLiteLibSQLCipherStat.SupportsSessionApi: Boolean;
+begin
+  Result := sqlite3_compileoption_used(MarshaledAString(PAnsiChar(UTF8String('ENABLE_SESSION')))) <> 0;
+end;
+
+function TSQLiteLibSQLCipherStat.CreateSession(const ADatabase: Pointer;
+  const ASchema: string): TSQLiteSession;
+begin
+  if not SupportsSessionApi then
+    raise ESQLiteSessionError.Create('SQLite was built without ENABLE_SESSION');
+  Result := TSQLiteSession.Create(ADatabase, ASchema);
+end;
+
+function TSQLiteLibSQLCipherStat.ApplyChangeset(const ADatabase: Pointer;
+  const AChangeset: TSQLiteChangeset;
+  const AConflictAction: TSQLiteSessionConflictAction): Integer;
+begin
+  if not SupportsSessionApi then
+    raise ESQLiteSessionError.Create('SQLite was built without ENABLE_SESSION');
+  Result := TSQLiteSession.Apply(ADatabase, AChangeset, AConflictAction);
 end;
 
 {-------------------------------------------------------------------------------}

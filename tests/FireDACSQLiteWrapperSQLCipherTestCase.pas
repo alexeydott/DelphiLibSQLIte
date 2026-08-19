@@ -13,7 +13,8 @@ uses
   FireDAC.Phys.SQLiteWrapper,
   FireDAC.Phys.SQLiteWrapper.SQLCipher,
   sqlite3.common,
-  sqlite3.static;
+  sqlite3.static,
+  sqlite.session;
 
 type
   TFireDACSQLiteWrapperSQLCipherTests = class(TTestCase)
@@ -32,6 +33,7 @@ type
     procedure RegistersAndLoadsStaticLibrary;
     procedure FireDACDatabaseUsesSQLCipherStaticApi;
     procedure RawWrapperApiCoversModernEntrypoints;
+    procedure FireDACWrapperExposesSessionApi;
     procedure EncryptedFileRoundTripThroughFireDACWrapper;
   end;
 
@@ -380,6 +382,44 @@ begin
     Lib.Unload;
     Lib.Free;
     DeleteDatabaseFiles(FileName);
+  end;
+end;
+
+procedure TFireDACSQLiteWrapperSQLCipherTests.FireDACWrapperExposesSessionApi;
+var
+  Lib: TSQLiteLibSQLCipherStat;
+  DB: psqlite3;
+  Session: TSQLiteSession;
+  Changeset: TSQLiteChangeset;
+begin
+  Lib := TSQLiteLibSQLCipherStat.Create;
+  try
+    Lib.Load('', '');
+    CheckTrue(Lib.SupportsSessionApi, 'FireDAC wrapper did not expose SQLite Session support');
+    DB := OpenRawDatabase(':memory:');
+    try
+      ExecSql(DB, 'create table session_items(id integer primary key, value text);');
+      Session := Lib.CreateSession(DB);
+      try
+        Session.Attach;
+        ExecSql(DB, 'insert into session_items(value) values(''facade'');');
+        Changeset := Session.CreateChangeset;
+        try
+          CheckTrue(not Changeset.IsEmpty, 'FireDAC session facade returned an empty changeset');
+          CheckEquals(SQLITE_OK, Lib.ApplyChangeset(DB, Changeset, scaReplace),
+            'FireDAC session facade failed to apply changeset');
+        finally
+          Changeset.Free;
+        end;
+      finally
+        Session.Free;
+      end;
+    finally
+      CloseRawDatabase(DB);
+    end;
+  finally
+    Lib.Unload;
+    Lib.Free;
   end;
 end;
 

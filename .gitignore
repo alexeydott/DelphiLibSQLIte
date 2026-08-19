@@ -1,9 +1,25 @@
 *.pch
 *.tds
-obj/
-tests/bin/
-tests/dcu/
-.agents
-.codex
-.github
+
+# Local AI-agent context and generated QA artifacts.
+.ai-factory/
+.agents/
+.codex/
+
+# Compiler and test output. Source tests, build scripts and OBJ files remain trackable.
+**/bin/
+**/dcu/
+tests/data/
+*.dcu
+*.exe
+*.log
+*.d
+*.sqlite-shm
+*.sqlite-wal
+*.sqlite-journal
+*.tmp
+*.bak
+
+# Local configuration and generated reports.
 *.json
+.github/

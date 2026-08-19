@@ -6,7 +6,7 @@ interface
 
 const
   SQLITE_MIN_API_VERSION  = 3007000;
-  SQLITE_VERSION_NUMBER = 3053003;
+  SQLITE_VERSION_NUMBER = 3053004;
 
   {$region ' Text Encodings codes'}
   /// <summary>UTF-8 text encoding code used by SQLite APIs.</summary>
@@ -983,7 +983,7 @@ type
   end;
   {$endregion}
 
-  {$region ' sqlite3_api_routines - for sqlite3 version: 3.53.3'}
+  {$region ' sqlite3_api_routines - for sqlite3 version: 3.53.4'}
   Psqlite3_api_routines = ^sqlite3_api_routines;
   /// <summary>structure that holds pointers to all of the SQLite API routines.</summary>
   sqlite3_api_routines = record

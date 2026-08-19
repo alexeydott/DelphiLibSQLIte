@@ -17,7 +17,7 @@ const
   SQLITE_TEMP_DB_FILE = ':temporary:';
   SQLITE_MAINDB_ALIAS = 'main';
   SQLITE_IDENTIFIER_QUOTE_CHAR = '"';
-  SQLITE_VERSION_NUMBER = 3053003;
+  SQLITE_VERSION_NUMBER = 3053004;
 {$IFDEF UNDERSCOREIMPORTNAME}
   SQLITE_METHOD_PREFIX = '_';
 {$ELSE}
@@ -1017,7 +1017,17 @@ type
 
   {$region 'callback methods'}
 type
-  TxProgressHandlerCallback = function(pUserData: Pointer): Integer; cdecl;
+
+  { 'SQLite3 Session API handles'}
+  TSQLiteSession = record end;
+  PSQLiteSession = ^TSQLiteSession;
+  TSQLiteChangesetIter = record end;
+  PSQLiteChangesetIter = ^TSQLiteChangesetIter;
+  TSQLiteChangegroup = record end;
+  PSQLiteChangegroup = ^TSQLiteChangegroup;
+  TSQLiteRebaser = record end;
+  PSQLiteRebaser = ^TSQLiteRebaser;
+  { 'SQLite3 Session API handles'}  TxProgressHandlerCallback = function(pUserData: Pointer): Integer; cdecl;
 
   TxBusyHandlerCallback = function(Ptr: Pointer; NumberOfInvocations: Integer): Integer; cdecl;
 
@@ -1050,7 +1060,11 @@ type
 
   TxWalHookCallback = function(Ptr: Pointer; pDB: Pointer; DbName: MarshaledAString; NumPages: Integer): Integer; cdecl;
   TxDbDumpCallBack = procedure(const z: MarshaledAString; pContext: Pointer); cdecl;
-  TxDbAutovacuumPagesCallback = function(pClientData: Pointer;zSchema: MarshaledAString;nDbPage,nFreePage,nBytePerPage: Cardinal): Cardinal; cdecl;
+  TxDbAutovacuumPagesCallback = function(pClientData: Pointer;zSchema: MarshaledAString;nDbPage,nFreePage,nBytePerPage: Cardinal): Cardinal; cdecl;  TxSessionTableFilter = function(pCtx: Pointer; zTab: MarshaledAString): Integer; cdecl;
+  TxSessionConflict = function(pCtx: Pointer; eConflict: Integer; pIter: PSQLiteChangesetIter): Integer; cdecl;
+  TxSessionChangesetFilterV3 = function(pCtx: Pointer; pIter: PSQLiteChangesetIter): Integer; cdecl;
+  TxSessionInput = function(pIn, pData: Pointer; pnData: PInteger): Integer; cdecl;
+  TxSessionOutput = function(pOut, pData: Pointer; nData: Integer): Integer; cdecl;
   {$endregion 'callback methods'}
 
   {$region 'SQLite3 virtual tables related'}

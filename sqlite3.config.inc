@@ -6,6 +6,7 @@
 {$DEFINE SQLITE3_BUILTIN_MATH_FUNCTIONS}  // register some math functions for sql99 standart
 {$DEFINE SQLITE3_USE_CIPHER}              // support encrypt / decrypting via sqlcipher functions
 {$DEFINE SQLITE3_CNG_CIPHER}              // use Windows CNG (bcrypt.dll) provider instead of OpenSSL
+{$DEFINE SQLITE_ENABLE_SESSION}           // expose SQLite Session/Changeset API
 {$IFDEF MSWINDOWS}
 // http://docs.embarcadero.com/products/rad_studio/delphiAndcpp2009/HelpUpdate2/EN/html/devcommon/compdirsweakpackaging_xml.html
 {.$WEAKPACKAGEUNIT}

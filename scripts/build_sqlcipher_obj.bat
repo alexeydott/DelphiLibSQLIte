@@ -142,12 +142,12 @@ set "FINAL_OBJ=%PROJECT_ROOT%\sqlite3_%PLATFORM%_%OBJ_SUFFIX%.obj"
 if not exist "%OUT_DIR%" mkdir "%OUT_DIR%"
 del /Q "%OUT_DIR%\*.obj" "%OUT_DIR%\*.tds" "%OUT_DIR%\*.pch" 2>NUL
 
-set "SYSINCLUDE="%RAD_STUDIO%\include";"%RAD_STUDIO%\include\dinkumware";"%RAD_STUDIO%\include\windows\crtl";"%RAD_STUDIO%\include\windows\sdk";"%RAD_STUDIO%\include\windows\rtl";"%RAD_STUDIO%\include\windows\vcl";"%RAD_STUDIO%\include\windows\fmx";"%RAD_STUDIO_PUBLIC_HPP%""
-set "CINCLUDE="%ZLIB_INCLUDE%";"%AMALG_DIR%";"%SQLCIPHER_ROOT%\src";%SYSINCLUDE%"
-if /I "%ENGINE%"=="openssl" set "CINCLUDE="%OPENSSL_SRC%\include";%CINCLUDE%"
+set "SYSINCLUDE=-I"%RAD_STUDIO%\include" -I"%RAD_STUDIO%\include\dinkumware" -I"%RAD_STUDIO%\include\windows\crtl" -I"%RAD_STUDIO%\include\windows\sdk" -I"%RAD_STUDIO%\include\windows\rtl" -I"%RAD_STUDIO%\include\windows\vcl" -I"%RAD_STUDIO%\include\windows\fmx" -I"%RAD_STUDIO_PUBLIC_HPP%""
+set "CINCLUDE=-I"%ZLIB_INCLUDE%" -I"%AMALG_DIR%" -I"%SQLCIPHER_ROOT%\src" %SYSINCLUDE%"
+if /I "%ENGINE%"=="openssl" set "CINCLUDE=-I"%OPENSSL_SRC%\include" %CINCLUDE%"
 
 echo Building %PLATFORM% object from "%SQLITE_LINK_SOURCE%"...
-"%BCC%" %COMMON_DEFINES% -n"%OUT_DIR%" -I%CINCLUDE% -c -tW -C8 -o"%OUT_OBJ%" -w-par -w-pia -w-rvl -O2 -v- -vi -H="%OUT_DIR%\sqlcipher.pch" -H "%SQLITE_LINK_SOURCE%"
+"%BCC%" %COMMON_DEFINES% -n"%OUT_DIR%" %CINCLUDE% -c -tW -C8 -o"%OUT_OBJ%" -w-par -w-pia -w-rvl -O2 -v- -vi -H="%OUT_DIR%\sqlcipher.pch" -H "%SQLITE_LINK_SOURCE%"
 if errorlevel 1 exit /b !errorlevel!
 
 copy /Y "%OUT_OBJ%" "%FINAL_OBJ%" >NUL
