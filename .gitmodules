@@ -2,7 +2,9 @@
 	path = externals/sqlcipher
 	url = https://github.com/alexeydott/sqlcipher.git
 	branch = master
+	ignore = dirty
 [submodule "externals/libopenssl"]
 	path = externals/libopenssl
 	url = https://github.com/alexeydott/DelphiLibOpenSSL.git
 	branch = main
+	ignore = dirty
