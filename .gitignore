@@ -5,6 +5,8 @@
 .ai-factory/
 .agents/
 .codex/
+.github/skills/
+.vscode/
 
 # Compiler and test output. Source tests, build scripts and OBJ files remain trackable.
 **/bin/
@@ -22,4 +24,3 @@ tests/data/
 
 # Local configuration and generated reports.
 *.json
-.github/

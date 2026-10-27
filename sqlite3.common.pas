@@ -811,10 +811,10 @@ type
   TSQLite3FuncContext = record end;
 
   /// func or agg-step
-  TxSFunc = procedure(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PSQLiteValues); cdecl;
+  TxSFunc = procedure(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PPSQLiteValues); cdecl;
 
-//  TxFunc = procedure(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PSQLiteValues); cdecl;
-//  TxStep = procedure(pCtx: PSQLite3FuncContext; Num: Integer; Value: PSQLiteValues); cdecl; // deprecated
+//  TxFunc = procedure(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PPSQLiteValues); cdecl;
+//  TxStep = procedure(pCtx: PSQLite3FuncContext; Num: Integer; Value: PPSQLiteValues); cdecl; // deprecated
 
   // Agg finalizer agg current Value
   TxValue = procedure(pCtx: PSQLite3FuncContext); cdecl;
@@ -1049,7 +1049,7 @@ type
   TxUpdateHook = procedure(Ptr: Pointer; Operation: Integer; DbName, TableName: MarshaledAString; RowId: Int64); cdecl;
 
   TxEntryPoint = function(db: Pointer; pzErrMsg: PMarshaledAString; pThunk: Pointer): Integer; cdecl;
-  TxModulexFunc = procedure(pCtx: PSQLite3FuncContext; Num: Integer; Value: PSQLiteValues); cdecl;
+  TxModulexFunc = procedure(pCtx: PSQLite3FuncContext; Num: Integer; Value: PPSQLiteValues); cdecl;
 //{$ifdef link_deprecated_api}
   TxTrace = procedure(pCtx: Pointer; Text: MarshaledAString); cdecl; // deprecated;
   TxProfile = procedure(Ptr: Pointer; Text: MarshaledAString; Time: UInt64); cdecl; // deprecated;
@@ -1134,12 +1134,12 @@ type
     xDestroy: function(pVTab: PSQLiteVtab): Integer; cdecl;
     xOpen: function(pVTab: PSQLiteVtab; ppCursor: PPSQLiteVtabCursor): Integer; cdecl;
     xClose: function(pCursor: PSQLiteVtabCursor): Integer; cdecl;
-    xFilter: function(pCursor: PSQLiteVtabCursor; idxNum: Integer; idxStr: MarshaledAString; argc: Integer; argv: PSQLiteValues): Integer; cdecl;
+    xFilter: function(pCursor: PSQLiteVtabCursor; idxNum: Integer; idxStr: MarshaledAString; argc: Integer; argv: PPSQLiteValues): Integer; cdecl;
     xNext: function(pCursor: PSQLiteVtabCursor): Integer; cdecl;
     xEof: function(pCursor: PSQLiteVtabCursor): Integer; cdecl;
     xColumn: function(pCursor: PSQLiteVtabCursor; pCtx: PSQLite3FuncContext; Column: Integer): Integer; cdecl;
     xRowID: function(pCursor: PSQLiteVtabCursor; var pRowID: Int64): Integer; cdecl;
-    xUpdate: function(pVTab: PSQLiteVtab; argc: Integer; argv: PSQLiteValues; var RowID: Int64): Integer; cdecl;
+    xUpdate: function(pVTab: PSQLiteVtab; argc: Integer; argv: PPSQLiteValues; var RowID: Int64): Integer; cdecl;
     xBegin: function(pVTab: PSQLiteVtab): Integer; cdecl;
     xSync: function(pVTab: PSQLiteVtab): Integer; cdecl;
     xCommit: function(pVTab: PSQLiteVtab): Integer; cdecl;
@@ -1479,7 +1479,7 @@ type
     xTokenize: function(pTokenizer: Pointer; pCtx: Pointer; flags: Integer; const pText: MarshaledAString; nText: Integer; xToken: TFTS5_xToken): Integer; cdecl;
   end;
 
-  TFTS5_xFunc = procedure(const pApi: Pointer; pFtsCtx: Pointer; pCtx: Pointer; nVal: Integer; Vals: PSQLiteValues); cdecl;
+  TFTS5_xFunc = procedure(const pApi: Pointer; pFtsCtx: Pointer; pCtx: Pointer; nVal: Integer; Vals: PPSQLiteValues); cdecl;
 
 //  TFTS5_xCreateTokenizer = function(pApi: Pointer; const zName: MarshaledAString; pContext: Pointer; pTokenizer: PFTS5TokenizerApi; xDestroy: TxDestroy): Integer; cdecl;
 //  TFTS5_xFindTokenizer = function(pApi: Pointer; const zName: MarshaledAString; ppContext: Pointer; pTokenizer: Pointer): Integer; cdecl;

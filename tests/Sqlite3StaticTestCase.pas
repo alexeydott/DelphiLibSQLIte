@@ -156,7 +156,7 @@ begin
     Inc(PFunctionState(Ptr)^.AuxDestroyCount);
 end;
 
-procedure TwiceFunction(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PSQLiteValues); cdecl;
+procedure TwiceFunction(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PPSQLiteValues); cdecl;
 var
   State: PFunctionState;
   Aux: Pointer;
@@ -176,8 +176,8 @@ begin
 
   if State <> nil then
   begin
-    State^.LastType := sqlite3_value_type(ArgValues[0]);
-    if sqlite3_value_frombind(ArgValues[0]) <> 0 then
+    State^.LastType := sqlite3_value_type(ArgValues^[0]);
+    if sqlite3_value_frombind(ArgValues^[0]) <> 0 then
       Inc(State^.FromBindCount);
   end;
 
@@ -185,10 +185,10 @@ begin
   if Aux = nil then
     sqlite3_set_auxdata(pCtx, 0, State, AuxDataDestroy);
 
-  sqlite3_result_int(pCtx, sqlite3_value_int(ArgValues[0]) * 2);
+  sqlite3_result_int(pCtx, sqlite3_value_int(ArgValues^[0]) * 2);
 end;
 
-procedure PointerFunction(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PSQLiteValues); cdecl;
+procedure PointerFunction(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PPSQLiteValues); cdecl;
 var
   PointerValue: Pointer;
   State: PFunctionState;
@@ -196,103 +196,103 @@ begin
   State := PFunctionState(sqlite3_user_data(pCtx));
   PointerValue := nil;
   if ArgNum = 1 then
-    PointerValue := sqlite3_value_pointer(ArgValues[0], MarshaledAString(PAnsiChar(DUNIT_POINTER_TYPE)));
+    PointerValue := sqlite3_value_pointer(ArgValues^[0], MarshaledAString(PAnsiChar(DUNIT_POINTER_TYPE)));
   if (PointerValue <> nil) and (State <> nil) then
     Inc(State^.PointerSeen);
   sqlite3_result_int(pCtx, Ord(PointerValue <> nil));
 end;
 
-procedure StaticBlobFunction(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PSQLiteValues); cdecl;
+procedure StaticBlobFunction(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PPSQLiteValues); cdecl;
 begin
   sqlite3_result_blob(pCtx, @STATIC_BLOB[0], SizeOf(STATIC_BLOB), nil);
 end;
 
-procedure StaticBlob64Function(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PSQLiteValues); cdecl;
+procedure StaticBlob64Function(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PPSQLiteValues); cdecl;
 begin
   sqlite3_result_blob64(pCtx, @STATIC_BLOB64[0], SizeOf(STATIC_BLOB64), nil);
 end;
 
-procedure StaticZeroBlobFunction(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PSQLiteValues); cdecl;
+procedure StaticZeroBlobFunction(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PPSQLiteValues); cdecl;
 begin
   sqlite3_result_zeroblob64(pCtx, 5);
 end;
 
-procedure StaticNullFunction(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PSQLiteValues); cdecl;
+procedure StaticNullFunction(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PPSQLiteValues); cdecl;
 begin
   sqlite3_result_null(pCtx);
 end;
 
-procedure StaticDoubleFunction(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PSQLiteValues); cdecl;
+procedure StaticDoubleFunction(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PPSQLiteValues); cdecl;
 begin
   sqlite3_result_double(pCtx, 12.5);
 end;
 
-procedure StaticAnswerFunction(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PSQLiteValues); cdecl;
+procedure StaticAnswerFunction(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PPSQLiteValues); cdecl;
 begin
   sqlite3_result_int(pCtx, 84);
 end;
 
-procedure StaticTextFunction(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PSQLiteValues); cdecl;
+procedure StaticTextFunction(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PPSQLiteValues); cdecl;
 begin
   sqlite3_result_text(pCtx, UTF8String('static-text'));
 end;
 
-procedure StaticText16Function(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PSQLiteValues); cdecl;
+procedure StaticText16Function(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PPSQLiteValues); cdecl;
 begin
   sqlite3_result_text16(pCtx, 'wide-result');
 end;
 
-procedure EchoValueFunction(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PSQLiteValues); cdecl;
+procedure EchoValueFunction(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PPSQLiteValues); cdecl;
 begin
   if ArgNum = 1 then
-    sqlite3_result_value(pCtx, ArgValues[0])
+    sqlite3_result_value(pCtx, ArgValues^[0])
   else
     sqlite3_result_null(pCtx);
 end;
 
-procedure ValueTextProbeFunction(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PSQLiteValues); cdecl;
+procedure ValueTextProbeFunction(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PPSQLiteValues); cdecl;
 var
   ProbeOk: Boolean;
 begin
   ProbeOk := (ArgNum = 1) and
-    (sqlite3_value_type(ArgValues[0]) = SQLITE_TEXT) and
-    (sqlite3_value_text(ArgValues[0]) <> nil) and
-    (sqlite3_value_text16(ArgValues[0]) <> nil) and
-    (sqlite3_value_text16le(ArgValues[0]) <> nil) and
-    (sqlite3_value_text16be(ArgValues[0]) <> nil) and
-    (sqlite3_value_bytes(ArgValues[0]) >= 5) and
-    (sqlite3_value_bytes16(ArgValues[0]) >= 10) and
-    (sqlite3_value_encoding(ArgValues[0]) <> 0) and
-    (sqlite3_value_subtype(ArgValues[0]) = 0) and
-    (sqlite3_value_nochange(ArgValues[0]) = 0) and
-    (sqlite3_value_str16(ArgValues[0], True) <> '');
+    (sqlite3_value_type(ArgValues^[0]) = SQLITE_TEXT) and
+    (sqlite3_value_text(ArgValues^[0]) <> nil) and
+    (sqlite3_value_text16(ArgValues^[0]) <> nil) and
+    (sqlite3_value_text16le(ArgValues^[0]) <> nil) and
+    (sqlite3_value_text16be(ArgValues^[0]) <> nil) and
+    (sqlite3_value_bytes(ArgValues^[0]) >= 5) and
+    (sqlite3_value_bytes16(ArgValues^[0]) >= 10) and
+    (sqlite3_value_encoding(ArgValues^[0]) <> 0) and
+    (sqlite3_value_subtype(ArgValues^[0]) = 0) and
+    (sqlite3_value_nochange(ArgValues^[0]) = 0) and
+    (sqlite3_value_str16(ArgValues^[0], True) <> '');
   sqlite3_result_int(pCtx, Ord(ProbeOk));
 end;
 
-procedure ValueBlobProbeFunction(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PSQLiteValues); cdecl;
+procedure ValueBlobProbeFunction(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PPSQLiteValues); cdecl;
 begin
-  if (ArgNum = 1) and (sqlite3_value_blob(ArgValues[0]) <> nil) then
-    sqlite3_result_int(pCtx, sqlite3_value_bytes(ArgValues[0]))
+  if (ArgNum = 1) and (sqlite3_value_blob(ArgValues^[0]) <> nil) then
+    sqlite3_result_int(pCtx, sqlite3_value_bytes(ArgValues^[0]))
   else
     sqlite3_result_int(pCtx, -1);
 end;
 
-procedure WindowSumStep(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PSQLiteValues); cdecl;
+procedure WindowSumStep(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PPSQLiteValues); cdecl;
 var
   State: PWindowSumState;
 begin
   State := PWindowSumState(sqlite3_aggregate_context(pCtx, SizeOf(TWindowSumState)));
   if (State <> nil) and (ArgNum = 1) then
-    State^.Sum := State^.Sum + sqlite3_value_int64(ArgValues[0]);
+    State^.Sum := State^.Sum + sqlite3_value_int64(ArgValues^[0]);
 end;
 
-procedure WindowSumInverse(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PSQLiteValues); cdecl;
+procedure WindowSumInverse(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PPSQLiteValues); cdecl;
 var
   State: PWindowSumState;
 begin
   State := PWindowSumState(sqlite3_aggregate_context(pCtx, SizeOf(TWindowSumState)));
   if (State <> nil) and (ArgNum = 1) then
-    State^.Sum := State^.Sum - sqlite3_value_int64(ArgValues[0]);
+    State^.Sum := State^.Sum - sqlite3_value_int64(ArgValues^[0]);
 end;
 
 procedure WindowSumValue(pCtx: PSQLite3FuncContext); cdecl;
@@ -320,13 +320,13 @@ begin
     nil);
 end;
 
-procedure AggregateStep(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PSQLiteValues); cdecl;
+procedure AggregateStep(pCtx: PSQLite3FuncContext; ArgNum: Integer; ArgValues: PPSQLiteValues); cdecl;
 var
   Sum: PInt64;
 begin
   Sum := PInt64(sqlite3_aggregate_context(pCtx, SizeOf(Int64)));
   if (Sum <> nil) and (ArgNum = 1) then
-    Sum^ := Sum^ + sqlite3_value_int64(ArgValues[0]);
+    Sum^ := Sum^ + sqlite3_value_int64(ArgValues^[0]);
 end;
 
 procedure AggregateFinal(pCtx: PSQLite3FuncContext); cdecl;

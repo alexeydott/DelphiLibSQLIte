@@ -123,7 +123,7 @@ begin
 end;
 
 procedure ValueProbeFunction(Context: PSQLite3FuncContext; ArgumentCount: Integer;
-  ArgumentValues: PSQLiteValues); cdecl;
+  ArgumentValues: PPSQLiteValues); cdecl;
 var
   TextValue: RawByteString;
   NumberValue: Double;
@@ -134,54 +134,54 @@ begin
     Exit;
   end;
 
-  TextValue := sqlite3_value_str(ArgumentValues[0]);
-  NumberValue := sqlite3_value_double(ArgumentValues[0]);
+  TextValue := sqlite3_value_str(ArgumentValues^[0]);
+  NumberValue := sqlite3_value_double(ArgumentValues^[0]);
   sqlite3_result_int(Context, Ord((TextValue = '12.5') and
     (NumberValue > 12.49) and (NumberValue < 12.51)));
 end;
 
 procedure PointerProducerFunction(Context: PSQLite3FuncContext; ArgumentCount: Integer;
-  ArgumentValues: PSQLiteValues); cdecl;
+  ArgumentValues: PPSQLiteValues); cdecl;
 begin
   sqlite3_result_pointer(Context, @PointerPayload,
     MarshaledAString(PAnsiChar(POINTER_TYPE)), nil);
 end;
 
 procedure PointerConsumerFunction(Context: PSQLite3FuncContext; ArgumentCount: Integer;
-  ArgumentValues: PSQLiteValues); cdecl;
+  ArgumentValues: PPSQLiteValues); cdecl;
 var
   Value: Pointer;
 begin
   Value := nil;
   if ArgumentCount = 1 then
-    Value := sqlite3_value_pointer(ArgumentValues[0], MarshaledAString(PAnsiChar(POINTER_TYPE)));
+    Value := sqlite3_value_pointer(ArgumentValues^[0], MarshaledAString(PAnsiChar(POINTER_TYPE)));
   sqlite3_result_int(Context, Ord(Value = @PointerPayload));
 end;
 
 procedure SubtypeProducerFunction(Context: PSQLite3FuncContext; ArgumentCount: Integer;
-  ArgumentValues: PSQLiteValues); cdecl;
+  ArgumentValues: PPSQLiteValues); cdecl;
 begin
   sqlite3_result_text(Context, UTF8String('subtyped'));
   sqlite3_result_subtype(Context, 73);
 end;
 
 procedure SubtypeConsumerFunction(Context: PSQLite3FuncContext; ArgumentCount: Integer;
-  ArgumentValues: PSQLiteValues); cdecl;
+  ArgumentValues: PPSQLiteValues); cdecl;
 begin
   if ArgumentCount = 1 then
-    sqlite3_result_int(Context, sqlite3_value_subtype(ArgumentValues[0]))
+    sqlite3_result_int(Context, sqlite3_value_subtype(ArgumentValues^[0]))
   else
     sqlite3_result_int(Context, -1);
 end;
 
 procedure Text64Function(Context: PSQLite3FuncContext; ArgumentCount: Integer;
-  ArgumentValues: PSQLiteValues); cdecl;
+  ArgumentValues: PPSQLiteValues); cdecl;
 begin
   sqlite3_result_text64(Context, MarshaledAString(@TEXT64_VALUE[0]), 6, SQLITE_TRANSIENT, SQLITE_UTF8);
 end;
 
 procedure Text16LeFunction(Context: PSQLite3FuncContext; ArgumentCount: Integer;
-  ArgumentValues: PSQLiteValues); cdecl;
+  ArgumentValues: PPSQLiteValues); cdecl;
 const
   Value: array[0..2] of WideChar = ('l', 'e', #0);
 begin
@@ -189,19 +189,19 @@ begin
 end;
 
 procedure Text16BeFunction(Context: PSQLite3FuncContext; ArgumentCount: Integer;
-  ArgumentValues: PSQLiteValues); cdecl;
+  ArgumentValues: PPSQLiteValues); cdecl;
 begin
   sqlite3_result_text16be(Context, PChar(@TEXT16_BE_VALUE[0]), 4, SQLITE_TRANSIENT);
 end;
 
 procedure ZeroBlobFunction(Context: PSQLite3FuncContext; ArgumentCount: Integer;
-  ArgumentValues: PSQLiteValues); cdecl;
+  ArgumentValues: PPSQLiteValues); cdecl;
 begin
   sqlite3_result_zeroblob(Context, 7);
 end;
 
 procedure ErrorFunction(Context: PSQLite3FuncContext; ArgumentCount: Integer;
-  ArgumentValues: PSQLiteValues); cdecl;
+  ArgumentValues: PPSQLiteValues); cdecl;
 var
   MessageText: UTF8String;
 begin
@@ -210,7 +210,7 @@ begin
 end;
 
 procedure Error16Function(Context: PSQLite3FuncContext; ArgumentCount: Integer;
-  ArgumentValues: PSQLiteValues); cdecl;
+  ArgumentValues: PPSQLiteValues); cdecl;
 var
   MessageText: string;
 begin
@@ -219,25 +219,25 @@ begin
 end;
 
 procedure ErrorTooBigFunction(Context: PSQLite3FuncContext; ArgumentCount: Integer;
-  ArgumentValues: PSQLiteValues); cdecl;
+  ArgumentValues: PPSQLiteValues); cdecl;
 begin
   sqlite3_result_error_toobig(Context);
 end;
 
 procedure ErrorNoMemoryFunction(Context: PSQLite3FuncContext; ArgumentCount: Integer;
-  ArgumentValues: PSQLiteValues); cdecl;
+  ArgumentValues: PPSQLiteValues); cdecl;
 begin
   sqlite3_result_error_nomem(Context);
 end;
 
 procedure ErrorStringUtf8Function(Context: PSQLite3FuncContext; ArgumentCount: Integer;
-  ArgumentValues: PSQLiteValues); cdecl;
+  ArgumentValues: PPSQLiteValues); cdecl;
 begin
   sqlite3_result_error_str(Context, UTF8String('dunit utf8 helper error'));
 end;
 
 procedure ErrorStringWideFunction(Context: PSQLite3FuncContext; ArgumentCount: Integer;
-  ArgumentValues: PSQLiteValues); cdecl;
+  ArgumentValues: PPSQLiteValues); cdecl;
 begin
   sqlite3_result_error_str(Context, string('dunit wide helper error'));
 end;
@@ -375,7 +375,7 @@ begin
 end;
 
 function DUnitVTabFilter(Cursor: PSQLiteVtabCursor; IndexNumber: Integer;
-  IndexString: MarshaledAString; ArgumentCount: Integer; ArgumentValues: PSQLiteValues): Integer; cdecl;
+  IndexString: MarshaledAString; ArgumentCount: Integer; ArgumentValues: PPSQLiteValues): Integer; cdecl;
 var
   Code: Integer;
   CurrentValue: PSQLiteValue;
@@ -393,7 +393,7 @@ begin
     1:
       if ArgumentCount = 1 then
       begin
-        Value := sqlite3_value_int(ArgumentValues[0]);
+        Value := sqlite3_value_int(ArgumentValues^[0]);
         if (Value >= 1) and (Value <= 3) then
           TypedCursor^.AllowedMask := 1 shl Value;
       end;
@@ -401,14 +401,14 @@ begin
       if ArgumentCount = 1 then
       begin
         CurrentValue := nil;
-        Code := sqlite3_vtab_in_first(ArgumentValues[0], CurrentValue);
+        Code := sqlite3_vtab_in_first(ArgumentValues^[0], CurrentValue);
         while Code = SQLITE_OK do
         begin
           Value := sqlite3_value_int(CurrentValue);
           if (Value >= 1) and (Value <= 3) then
             TypedCursor^.AllowedMask := TypedCursor^.AllowedMask or (1 shl Value);
           Inc(State^.InValues);
-          Code := sqlite3_vtab_in_next(ArgumentValues[0], CurrentValue);
+          Code := sqlite3_vtab_in_next(ArgumentValues^[0], CurrentValue);
         end;
         if Code <> SQLITE_DONE then
           Exit(Code);
@@ -464,7 +464,7 @@ begin
 end;
 
 function DUnitVTabUpdate(VTab: PSQLiteVtab; ArgumentCount: Integer;
-  ArgumentValues: PSQLiteValues; var RowId: Int64): Integer; cdecl;
+  ArgumentValues: PPSQLiteValues; var RowId: Int64): Integer; cdecl;
 begin
   PDUnitVTab(VTab)^.State^.ConflictMode :=
     sqlite3_vtab_on_conflict(PDUnitVTab(VTab)^.State^.DB);
