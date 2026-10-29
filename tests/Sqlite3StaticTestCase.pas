@@ -1653,7 +1653,7 @@ begin
     sqlite3_mutex_free(Mutex);
   end;
 
-  CheckTrue(sqlite3_win32_is_nt <> 0, 'sqlite3_win32_is_nt returned false');
+  // sqlite3_win32_is_nt was dropped from the SQLite 3.54.1 amalgamation.
   sqlite3_win32_sleep(0);
   WideSource := 'wide';
   Utf8Text := sqlite3_win32_unicode_to_utf8(PWideChar(WideSource));

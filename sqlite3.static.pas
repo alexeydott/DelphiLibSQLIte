@@ -394,7 +394,7 @@ function sqlite3_strnicmp(Str1: MarshaledAString; Str2: MarshaledAString; MaxLen
 
 {$REGION 'win specific'}
 {$IFDEF MSWINDOWS}
-function sqlite3_win32_is_nt(): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_win32_is_nt';
+// function sqlite3_win32_is_nt(): Integer; cdecl; // removed in SQLite 3.54.1 amalgamation
 function sqlite3_win32_mbcs_to_utf8(zText: MarshaledAString): MarshaledAString; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_win32_mbcs_to_utf8';
 function sqlite3_win32_mbcs_to_utf8_v2(zText: MarshaledAString; bUseAnsi: Integer): MarshaledAString; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_win32_mbcs_to_utf8_v2';
 function sqlite3_win32_set_directory(dwType: Cardinal; zValue: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_win32_set_directory';
