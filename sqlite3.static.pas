@@ -47,6 +47,8 @@ procedure sqlite3_interrupt(pDB: Pointer); cdecl; external name SQLITE_METHOD_PR
 function sqlite3_is_interrupted(pDB: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_is_interrupted';
 function sqlite3_complete(sql: MarshaledAString): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_complete';
 function sqlite3_complete16(sql: MarshaledString): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_complete16';
+// since 3.54.0
+function sqlite3_incomplete(sql: MarshaledAString): Int64; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_incomplete';
 
 function sqlite3_busy_handler(pDB: Pointer; Callback: TxBusyHandlerCallback; Ptr: Pointer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_busy_handler';
 function sqlite3_busy_timeout(pDB: Pointer; ms: Integer): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_busy_timeout';
@@ -261,6 +263,8 @@ procedure sqlite3_result_text16be(pCtx: PSQLite3FuncContext; Data: PChar; Size: 
 procedure sqlite3_result_value(pCtx: PSQLite3FuncContext; Data: PSQLiteValue); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_result_value';
 procedure sqlite3_result_zeroblob(pCtx: PSQLite3FuncContext; N: Integer); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_result_zeroblob';
 procedure sqlite3_result_zeroblob64(pCtx: PSQLite3FuncContext; nBytes: UInt64); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_result_zeroblob64';
+// since 3.54.1
+procedure sqlite3_result_str(pCtx: PSQLite3FuncContext; pStr: PSQLite3Str; N: Integer); cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_result_str'; 
 
 function sqlite3_txn_state(pDB: Pointer; zSchema: MarshaledAString): Integer; cdecl; external name SQLITE_METHOD_PREFIX + 'sqlite3_txn_state';
 

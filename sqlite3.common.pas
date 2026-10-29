@@ -682,7 +682,6 @@ const
   SQLITE_DROP_VTABLE = 30;                    // Table Name      Module Name
   SQLITE_FUNCTION = 31;                       // NULL            Function Name
   SQLITE_SAVEPOINT = 32;                      // Operation       Savepoint Name
-  SQLITE_COPY = 0;                            // No longer used
   SQLITE_RECURSIVE = 33;                      // NULL            NULL
 
 type
@@ -719,8 +718,7 @@ type
     acCreateVTable = SQLITE_CREATE_VTABLE,
     acDropVTable = SQLITE_DROP_VTABLE,
     acFunction = SQLITE_FUNCTION,
-    acSavePoint = SQLITE_SAVEPOINT,
-    acCopy = SQLITE_COPY
+    acSavePoint = SQLITE_SAVEPOINT
   );
   {$endregion 'Authorizer Action Codes'}
 
@@ -854,7 +852,7 @@ type
 //};
 {$endregion}
 
-  {$region 'sqlite3int.h 3.25.x'}
+{$region 'sqlite3int.h 3.25.x'}
 //struct FuncDef {
 //  i8 nArg;             /* Number of arguments.  -1 means unlimited */
 //  u32 funcFlags;       /* Some combination of SQLITE_FUNC_* */
@@ -1163,6 +1161,15 @@ const
   SQLITE_ANY = 5;               // sqlite3_create_function only
   SQLITE_UTF16_ALIGNED = 8;     // sqlite3_create_collation only
   SQLITE_UTF8_ZT = 16;          // Zero-terminated UTF8
+
+///<summary>Control Flags For sqlite3_result_str()
+/// The following integers can be used as the third "F" argument
+/// to [sqlite3_result_str(C,S,F)].
+///</summary>
+const
+	SQLITE_COPY = 0;   // Results copied.  Dynamic string unchanged
+	SQLITE_XFER = 1;   // Results transfered.  Dynamic string reset
+	SQLITE_FINISH = 2; // Like SQLITE_XFER, plus dynamic string freed
 
 const
   SQLITE_STATIC = Pointer(0);
